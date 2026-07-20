@@ -1,0 +1,122 @@
+// NOTA: Neste protótipo, o cliente Prisma NÃO é usado em tempo de execução.
+// O download dos engines nativos do Prisma (binaries.prisma.sh) é bloqueado
+// pela política de rede do ambiente sandbox usado para gerar este projeto,
+// então a camada de dados foi implementada com o módulo nativo `node:sqlite`
+// (lib/db.ts) seguindo EXATAMENTE este mesmo modelo de dados. Este arquivo
+// permanece como a documentação canônica do esquema (e pode ser usado
+// normalmente com `npx prisma migrate dev` em um ambiente com acesso à
+// internet liberado).
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  EMPLOYEE
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum MovementSource {
+  MANUAL
+  QRCODE
+}
+
+enum PackageType {
+  CX
+  PCT
+}
+
+model Adega {
+  id        String     @id @default(cuid())
+  name      String
+  createdAt DateTime   @default(now())
+  users     User[]
+  products  Product[]
+  movements Movement[]
+  pedidos   Pedido[]
+}
+
+model User {
+  id           String     @id @default(cuid())
+  adegaId      String
+  adega        Adega      @relation(fields: [adegaId], references: [id])
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime   @default(now())
+  movements    Movement[] @relation("MovementCreatedBy")
+  pedidos      Pedido[]   @relation("PedidoCreatedBy")
+}
+
+model Product {
+  id            String     @id @default(cuid())
+  adegaId       String
+  adega         Adega      @relation(fields: [adegaId], references: [id])
+  code          String
+  barcode       String?
+  name          String
+  category      String
+  unit          String
+  costPrice     Float
+  salePrice     Float
+  currentStock  Float      @default(0)
+  minStockAlert Float?
+  packageType   PackageType?
+  unitsPerPackage Int?
+  createdAt     DateTime   @default(now())
+  movements     Movement[]
+
+  @@index([adegaId])
+  @@unique([adegaId, code])
+  @@unique([adegaId, barcode])
+}
+
+model Pedido {
+  id              String       @id @default(cuid())
+  adegaId         String
+  adega           Adega        @relation(fields: [adegaId], references: [id])
+  type            MovementType @default(OUT)
+  number          Int
+  totalValue      Float
+  createdAt       DateTime     @default(now())
+  createdByUserId String
+  createdByUser   User         @relation("PedidoCreatedBy", fields: [createdByUserId], references: [id])
+  items           Movement[]
+
+  @@index([adegaId])
+  @@unique([adegaId, type, number])
+}
+
+model Movement {
+  id              String         @id @default(cuid())
+  adegaId         String
+  adega           Adega          @relation(fields: [adegaId], references: [id])
+  productId       String
+  product         Product        @relation(fields: [productId], references: [id])
+  type            MovementType
+  quantity        Float
+  unitValue       Float
+  totalValue      Float
+  createdAt       DateTime       @default(now())
+  createdByUserId String
+  createdByUser   User           @relation("MovementCreatedBy", fields: [createdByUserId], references: [id])
+  source          MovementSource @default(MANUAL)
+  pedidoId        String?
+  pedido          Pedido?        @relation(fields: [pedidoId], references: [id])
+
+  @@index([adegaId])
+  @@index([productId])
+  @@index([createdAt])
+  @@index([pedidoId])
+}

@@ -1,0 +1,33 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser, SessionData } from "./session";
+import type { Role } from "./types";
+
+/** Garante que existe um usuário logado; caso contrário redireciona para o login. */
+export async function requireUser(): Promise<SessionData> {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/");
+  }
+  return user as SessionData;
+}
+
+/** Garante que o usuário logado possui um dos papéis (roles) permitidos. */
+export async function requireRole(allowed: Role[]): Promise<SessionData> {
+  const user = await requireUser();
+  if (!allowed.includes(user.role)) {
+    redirect("/acesso-negado");
+  }
+  return user;
+}
+
+export function canAccessReportsFull(role: Role) {
+  return role === "OWNER";
+}
+
+export function canAccessReportsLimited(role: Role) {
+  return role === "OWNER" || role === "MANAGER";
+}
+
+export function canManageProducts(role: Role) {
+  return role === "OWNER";
+}

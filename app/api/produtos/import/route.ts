@@ -1,0 +1,103 @@
+import { NextRequest, NextResponse } from "next/server";
+import * as XLSX from "xlsx";
+import { getCurrentUser } from "@/lib/session";
+import { canManageProducts } from "@/lib/auth";
+import { createProduct, getProductByCode, isBarcodeTaken, updateProduct } from "@/lib/repo";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  if (!canManageProducts(user.role)) {
+    return NextResponse.json({ error: "Você não tem permissão para importar produtos." }, { status: 403 });
+  }
+
+  const formData = await req.formData().catch(() => null);
+  const file = formData?.get("file");
+  if (!file || !(file instanceof Blob)) {
+    return NextResponse.json({ error: "Arquivo não enviado." }, { status: 400 });
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json({ error: "Arquivo muito grande (máximo 5MB)." }, { status: 400 });
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  let workbook: XLSX.WorkBook;
+  try {
+    workbook = XLSX.read(buffer, { type: "buffer" });
+  } catch {
+    return NextResponse.json(
+      { error: "Não foi possível ler o arquivo. Envie um arquivo .xlsx válido." },
+      { status: 400 }
+    );
+  }
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!sheet) {
+    return NextResponse.json({ error: "A planilha enviada está vazia." }, { status: 400 });
+  }
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+
+  let created = 0;
+  let updated = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowNum = i + 2; // linha 1 é o cabeçalho
+
+    const name = String(row["Nome"] ?? "").trim();
+    const category = String(row["Categoria"] ?? "").trim();
+    const unit = String(row["Unidade"] ?? "").trim();
+    const costPrice = Number(row["Preço de Custo"]);
+    const salePrice = Number(row["Preço de Venda"]);
+    const rawMinStock = row["Estoque Mínimo"];
+    const minStockAlert =
+      rawMinStock === "" || rawMinStock === undefined || rawMinStock === null ? null : Number(rawMinStock);
+    const rawBarcode = String(row["Código de Barras"] ?? "").trim();
+    const barcode = rawBarcode === "" ? null : rawBarcode;
+    const codeInFile = String(row["Código"] ?? "").trim();
+
+    if (!name || !category || !unit) {
+      errors.push(`Linha ${rowNum}: nome, categoria e unidade são obrigatórios.`);
+      continue;
+    }
+    if (Number.isNaN(costPrice) || Number.isNaN(salePrice) || costPrice < 0 || salePrice < 0) {
+      errors.push(`Linha ${rowNum}: preços inválidos.`);
+      continue;
+    }
+    if (minStockAlert !== null && Number.isNaN(minStockAlert)) {
+      errors.push(`Linha ${rowNum}: estoque mínimo inválido.`);
+      continue;
+    }
+
+    const existing = codeInFile ? getProductByCode(codeInFile, user.adegaId) : undefined;
+
+    if (barcode && isBarcodeTaken(barcode, user.adegaId, existing?.id)) {
+      errors.push(`Linha ${rowNum}: código de barras "${barcode}" já está em uso por outro produto.`);
+      continue;
+    }
+
+    if (existing) {
+      updateProduct(existing.id, user.adegaId, { name, category, unit, costPrice, salePrice, minStockAlert, barcode });
+      updated++;
+    } else {
+      const currentStock = Number(row["Estoque Atual"]);
+      createProduct({
+        adegaId: user.adegaId,
+        name,
+        category,
+        unit,
+        costPrice,
+        salePrice,
+        currentStock: Number.isNaN(currentStock) ? 0 : currentStock,
+        minStockAlert,
+        barcode,
+      });
+      created++;
+    }
+  }
+
+  return NextResponse.json({ ok: true, created, updated, errors });
+}
