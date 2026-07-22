@@ -21,15 +21,15 @@ function makeRequest(body: unknown) {
 }
 
 async function loginAs(
-  adegaId: string,
+  empresaId: string,
   filialId: string,
-  adegaName: string,
+  empresaName: string,
   userId: string,
   name: string,
   email: string,
   role: "OWNER" | "MANAGER" | "EMPLOYEE"
 ) {
-  vi.mocked(getCurrentUser).mockResolvedValue({ userId, adegaId, adegaName, filialId, name, email, role });
+  vi.mocked(getCurrentUser).mockResolvedValue({ userId, empresaId, empresaName, filialId, name, email, role });
 }
 
 describe("POST /api/filiais", () => {
@@ -37,9 +37,9 @@ describe("POST /api/filiais", () => {
     vi.mocked(getCurrentUser).mockReset();
   });
 
-  it("adega nova (maxFiliais padrão 1) já bate no limite com a filial que nasce no cadastro", async () => {
-    const { adega, filial, user } = await seedFixture();
-    await loginAs(adega.id, filial.id, adega.name, user.id, user.name, user.email, "OWNER");
+  it("empresa nova (maxFiliais padrão 1) já bate no limite com a filial que nasce no cadastro", async () => {
+    const { empresa, filial, user } = await seedFixture();
+    await loginAs(empresa.id, filial.id, empresa.name, user.id, user.name, user.email, "OWNER");
 
     const res = await POST(makeRequest({ name: "Filial Nova" }));
     const json = await res.json();
@@ -49,9 +49,9 @@ describe("POST /api/filiais", () => {
   });
 
   it("permite criar filial extra depois que a licença é aumentada", async () => {
-    const { adega, filial, user } = await seedFixture();
-    await prisma.adega.update({ where: { id: adega.id }, data: { maxFiliais: 2 } });
-    await loginAs(adega.id, filial.id, adega.name, user.id, user.name, user.email, "OWNER");
+    const { empresa, filial, user } = await seedFixture();
+    await prisma.empresa.update({ where: { id: empresa.id }, data: { maxFiliais: 2 } });
+    await loginAs(empresa.id, filial.id, empresa.name, user.id, user.name, user.email, "OWNER");
 
     const res = await POST(makeRequest({ name: "Filial Nova" }));
     const json = await res.json();
@@ -61,9 +61,9 @@ describe("POST /api/filiais", () => {
   });
 
   it("bloqueia a terceira filial quando a licença é só pra 2", async () => {
-    const { adega, filial, user } = await seedFixture();
-    await prisma.adega.update({ where: { id: adega.id }, data: { maxFiliais: 2 } });
-    await loginAs(adega.id, filial.id, adega.name, user.id, user.name, user.email, "OWNER");
+    const { empresa, filial, user } = await seedFixture();
+    await prisma.empresa.update({ where: { id: empresa.id }, data: { maxFiliais: 2 } });
+    await loginAs(empresa.id, filial.id, empresa.name, user.id, user.name, user.email, "OWNER");
 
     const first = await POST(makeRequest({ name: "Segunda filial" }));
     expect(first.status).toBe(200);
@@ -73,9 +73,9 @@ describe("POST /api/filiais", () => {
   });
 
   it("funcionário não pode criar filial mesmo dentro da licença", async () => {
-    const { adega, filial, user } = await seedFixture();
-    await prisma.adega.update({ where: { id: adega.id }, data: { maxFiliais: 5 } });
-    await loginAs(adega.id, filial.id, adega.name, user.id, user.name, user.email, "EMPLOYEE");
+    const { empresa, filial, user } = await seedFixture();
+    await prisma.empresa.update({ where: { id: empresa.id }, data: { maxFiliais: 5 } });
+    await loginAs(empresa.id, filial.id, empresa.name, user.id, user.name, user.email, "EMPLOYEE");
 
     const res = await POST(makeRequest({ name: "Filial Nova" }));
 

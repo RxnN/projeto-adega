@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, createAdega, createFilial, createUser } from "@/lib/repo";
+import { getUserByEmail, createEmpresa, createFilial, createUser } from "@/lib/repo";
 import { getSession } from "@/lib/session";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { withErrorHandling } from "@/lib/api-handler";
@@ -20,7 +20,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   if (!parsed.success) {
     return NextResponse.json({ error: firstZodError(parsed) }, { status: 400 });
   }
-  const { adegaName, cnpjCpf, userName, phone, email, password } = parsed.data;
+  const { empresaName, cnpjCpf, userName, phone, email, password } = parsed.data;
 
   // Verificar se o e-mail já está cadastrado
   const existingUser = await getUserByEmail(email);
@@ -28,19 +28,19 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return NextResponse.json({ error: "Este e-mail já está cadastrado no sistema." }, { status: 400 });
   }
 
-  // Criar a adega (nasce travada — approved: false — até o pagamento ser confirmado)
-  const adega = await createAdega(adegaName, cnpjCpf);
+  // Criar a empresa (nasce travada — approved: false — até o pagamento ser confirmado)
+  const empresa = await createEmpresa(empresaName, cnpjCpf);
 
-  // Toda adega nasce com 1 filial (matriz) — redes com mais de um estabelecimento
+  // Toda empresa nasce com 1 filial (matriz) — redes com mais de um estabelecimento
   // cadastram filiais adicionais depois em /filiais.
-  await createFilial(adega.id, adegaName);
+  await createFilial(empresa.id, empresaName);
 
   // Criptografar a senha do usuário
   const passwordHash = await bcrypt.hash(password, 10);
 
   // Criar o usuário dono (OWNER)
   const user = await createUser({
-    adegaId: adega.id,
+    empresaId: empresa.id,
     name: userName,
     phone,
     email,
@@ -52,8 +52,8 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   const session = await getSession();
   session.user = {
     userId: user.id,
-    adegaId: adega.id,
-    adegaName: adega.name,
+    empresaId: empresa.id,
+    empresaName: empresa.name,
     filialId: null,
     name: user.name,
     email: user.email,

@@ -1,4 +1,4 @@
-// Liga/desliga a importação em lote de produtos (planilha) para a adega de um usuário.
+// Liga/desliga a importação em lote de produtos (planilha) para a empresa de um usuário.
 // Uso: npx tsx scripts/toggle-import.ts email@do-dono.com on
 //      npx tsx scripts/toggle-import.ts email@do-dono.com off
 
@@ -18,13 +18,13 @@ async function main() {
     process.exit(1);
   }
 
-  const adega = await prisma.adega.update({
-    where: { id: user.adegaId },
+  const empresa = await prisma.empresa.update({
+    where: { id: user.empresaId },
     data: { importEnabled: action === "on" },
   });
 
   console.log(
-    `Importação em lote ${action === "on" ? "HABILITADA" : "DESABILITADA"} para a adega "${adega.name}" (${adega.id}).`
+    `Importação em lote ${action === "on" ? "HABILITADA" : "DESABILITADA"} para a empresa "${empresa.name}" (${empresa.id}).`
   );
 }
 

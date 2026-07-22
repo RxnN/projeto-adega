@@ -58,13 +58,13 @@ export default function RelatoriosTabs({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex flex-wrap rounded-full border p-1 gap-1" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
+        <div className="inline-flex flex-wrap rounded-xl border p-1 gap-1" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
           {tabs.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setTab(t.key)}
-              className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 rounded-full transition-colors"
+              className="text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg transition-colors"
               style={
                 tab === t.key
                   ? { backgroundColor: "var(--accent)", color: "var(--accent-ink)" }

@@ -1,4 +1,4 @@
-// Define quantas filiais uma adega pode ter — licenciado manualmente por você,
+// Define quantas filiais uma empresa pode ter — licenciado manualmente por você,
 // não é algo que o dono habilita sozinho.
 // Uso: npx tsx scripts/set-max-filiais.ts email@do-dono.com 3
 
@@ -19,12 +19,12 @@ async function main() {
     process.exit(1);
   }
 
-  const adega = await prisma.adega.update({
-    where: { id: user.adegaId },
+  const empresa = await prisma.empresa.update({
+    where: { id: user.empresaId },
     data: { maxFiliais: count },
   });
 
-  console.log(`Adega "${adega.name}" (${adega.id}) agora pode ter até ${count} filial(is).`);
+  console.log(`Empresa "${empresa.name}" (${empresa.id}) agora pode ter até ${count} filial(is).`);
 }
 
 main()

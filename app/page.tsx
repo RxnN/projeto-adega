@@ -13,9 +13,9 @@ export default async function LoginPage() {
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="font-display text-3xl font-extrabold">🍷 Adegas</h1>
+          <h1 className="font-display text-3xl font-extrabold">Omnix Connect</h1>
           <p className="mt-1" style={{ color: "var(--ink-soft)" }}>
-            Gestão de estoque e vendas
+            Gestão conectada para o seu negócio
           </p>
         </div>
         <div className="card">
@@ -24,7 +24,7 @@ export default async function LoginPage() {
             <p className="text-xs" style={{ color: "var(--ink-soft)" }}>
               Não tem uma conta?{" "}
               <Link href="/cadastro" className="font-semibold hover:underline" style={{ color: "var(--accent)" }}>
-                Cadastre sua Adega
+                Cadastre sua empresa
               </Link>
             </p>
           </div>
@@ -32,9 +32,9 @@ export default async function LoginPage() {
 
         <div className="card mt-4 text-xs space-y-1" style={{ color: "var(--ink-soft)" }}>
           <p className="font-semibold">Credenciais de demonstração (senha: senha123)</p>
-          <p>Dono: dono@adega.com</p>
-          <p>Gerente: gerente@adega.com</p>
-          <p>Funcionário: funcionario@adega.com</p>
+          <p>Dono: dono@empresaexemplo.com</p>
+          <p>Gerente: gerente@empresaexemplo.com</p>
+          <p>Funcionário: funcionario@empresaexemplo.com</p>
         </div>
       </div>
     </div>

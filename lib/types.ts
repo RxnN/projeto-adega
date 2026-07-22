@@ -4,7 +4,7 @@ export type MovementSource = "MANUAL" | "QRCODE";
 export type PackageType = "CX" | "PCT";
 export type PaymentMethod = "DINHEIRO" | "PIX" | "CARTAO" | "FIADO" | "BOLETO";
 
-export interface Adega {
+export interface Empresa {
   id: string;
   name: string;
   cnpjCpf: string | null;
@@ -17,14 +17,14 @@ export interface Adega {
 
 export interface Filial {
   id: string;
-  adegaId: string;
+  empresaId: string;
   name: string;
   createdAt: string;
 }
 
 export interface Promotion {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   productId: string;
   promoPrice: number;
@@ -37,7 +37,7 @@ export interface Promotion {
 
 export interface User {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string | null;
   name: string;
   phone: string | null;
@@ -49,7 +49,7 @@ export interface User {
 
 export interface Product {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   code: string;
   barcode: string | null;
@@ -68,7 +68,7 @@ export interface Product {
 
 export interface Movement {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   productId: string;
   type: MovementType;
@@ -89,7 +89,7 @@ export interface MovementWithRelations extends Movement {
 
 export interface Pedido {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   type: MovementType;
   number: number;

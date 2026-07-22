@@ -4,7 +4,7 @@ import type { PackageType, Product } from "./types";
 
 function toProduct(p: {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   code: string;
   barcode: string | null;
@@ -33,9 +33,9 @@ export interface EstoqueItem extends Product {
   valorEmEstoque: number;
 }
 
-export async function getEstoqueAtual(adegaId: string, filialId?: string): Promise<EstoqueItem[]> {
+export async function getEstoqueAtual(empresaId: string, filialId?: string): Promise<EstoqueItem[]> {
   const products = await prisma.product.findMany({
-    where: { adegaId, ...(filialId ? { filialId } : {}) },
+    where: { empresaId, ...(filialId ? { filialId } : {}) },
     orderBy: { name: "asc" },
   });
   return products.map((p) => {
@@ -51,14 +51,14 @@ export interface FaturamentoResumo {
 }
 
 export async function getFaturamento(
-  adegaId: string,
+  empresaId: string,
   from: Date,
   to: Date,
   filialId?: string
 ): Promise<FaturamentoResumo> {
   const result = await prisma.movement.aggregate({
     where: {
-      adegaId,
+      empresaId,
       ...(filialId ? { filialId } : {}),
       type: "OUT",
       createdAt: { gte: from, lte: to },
@@ -83,20 +83,20 @@ export interface FaturamentoPorProduto {
 }
 
 export async function getFaturamentoPorProduto(
-  adegaId: string,
+  empresaId: string,
   from: Date,
   to: Date,
   filialId?: string
 ): Promise<FaturamentoPorProduto[]> {
   const products = await prisma.product.findMany({
-    where: { adegaId, ...(filialId ? { filialId } : {}) },
+    where: { empresaId, ...(filialId ? { filialId } : {}) },
     select: { id: true, name: true, unit: true },
     orderBy: { name: "asc" },
   });
   const grouped = await prisma.movement.groupBy({
     by: ["productId"],
     where: {
-      adegaId,
+      empresaId,
       ...(filialId ? { filialId } : {}),
       type: "OUT",
       createdAt: { gte: from, lte: to },
@@ -142,20 +142,20 @@ export interface RentabilidadeItem {
  * quantidade vendida). Não faz custeio histórico (FIFO/média móvel) — usa o custo cadastrado
  * hoje no produto, mesma limitação já aceita no resto do app. */
 export async function getRentabilidade(
-  adegaId: string,
+  empresaId: string,
   from: Date,
   to: Date,
   filialId?: string
 ): Promise<{ resumo: RentabilidadeResumo; porProduto: RentabilidadeItem[] }> {
   const products = await prisma.product.findMany({
-    where: { adegaId, ...(filialId ? { filialId } : {}) },
+    where: { empresaId, ...(filialId ? { filialId } : {}) },
     select: { id: true, name: true, unit: true, costPrice: true },
     orderBy: { name: "asc" },
   });
   const grouped = await prisma.movement.groupBy({
     by: ["productId"],
     where: {
-      adegaId,
+      empresaId,
       ...(filialId ? { filialId } : {}),
       type: "OUT",
       createdAt: { gte: from, lte: to },
@@ -213,19 +213,19 @@ export interface SugestaoCompraItem {
 
 /** Consumo médio diário baseado nas saídas dos últimos 30 dias e sugestão de reposição
  * para cobrir os próximos 30 dias de demanda média, descontando o estoque atual. */
-export async function getSugestaoCompra(adegaId: string, filialId?: string): Promise<SugestaoCompraItem[]> {
+export async function getSugestaoCompra(empresaId: string, filialId?: string): Promise<SugestaoCompraItem[]> {
   const since = new Date();
   since.setDate(since.getDate() - 30);
 
   const products = await prisma.product.findMany({
-    where: { adegaId, ...(filialId ? { filialId } : {}) },
+    where: { empresaId, ...(filialId ? { filialId } : {}) },
     orderBy: { name: "asc" },
   });
 
   const consumption = await prisma.movement.groupBy({
     by: ["productId"],
     where: {
-      adegaId,
+      empresaId,
       ...(filialId ? { filialId } : {}),
       type: "OUT",
       createdAt: { gte: since },
@@ -263,7 +263,7 @@ export interface RecorrenciaItem {
 
 /** Ranking de produtos por número de movimentações de saída (frequência), não apenas volume. */
 export async function getRankingRecorrencia(
-  adegaId: string,
+  empresaId: string,
   from: Date,
   to: Date,
   filialId?: string
@@ -271,7 +271,7 @@ export async function getRankingRecorrencia(
   const grouped = await prisma.movement.groupBy({
     by: ["productId"],
     where: {
-      adegaId,
+      empresaId,
       ...(filialId ? { filialId } : {}),
       type: "OUT",
       createdAt: { gte: from, lte: to },

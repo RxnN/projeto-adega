@@ -47,7 +47,7 @@ export async function checkPedidoStock(
 /** Fecha um pedido (entrada ou saída): cria o registro de Pedido, uma Movement por item e
  * ajusta o estoque de cada produto, tudo em uma única transação (tudo ou nada). */
 export async function createPedido(input: {
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   type: MovementType;
   createdByUserId: string;
@@ -64,7 +64,7 @@ export async function createPedido(input: {
     await tx.pedido.create({
       data: {
         id: pedidoId,
-        adegaId: input.adegaId,
+        empresaId: input.empresaId,
         filialId: input.filialId,
         type: input.type,
         number,
@@ -80,7 +80,7 @@ export async function createPedido(input: {
       await tx.movement.create({
         data: {
           id: createId("mov"),
-          adegaId: input.adegaId,
+          empresaId: input.empresaId,
           filialId: input.filialId,
           productId: item.productId,
           type: input.type,
@@ -104,7 +104,7 @@ export async function createPedido(input: {
 
 async function attachPedidoItems(pedido: {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   type: string;
   number: number;
@@ -135,7 +135,7 @@ async function attachPedidoItems(pedido: {
 
   return {
     id: pedido.id,
-    adegaId: pedido.adegaId,
+    empresaId: pedido.empresaId,
     filialId: pedido.filialId,
     type: pedido.type as MovementType,
     number: pedido.number,
@@ -203,7 +203,7 @@ export async function listPedidos(
 
   return pedidos.map((pedido) => ({
     id: pedido.id,
-    adegaId: pedido.adegaId,
+    empresaId: pedido.empresaId,
     filialId: pedido.filialId,
     type: pedido.type as MovementType,
     number: pedido.number,

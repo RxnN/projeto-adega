@@ -1,8 +1,8 @@
-# Adegas — Gestão de Estoque e Vendas (Protótipo)
+# Omnix Connect — Gestão de Estoque e Vendas (Protótipo)
 
 Protótipo funcional de um sistema **SaaS multi-tenant** para gestão de estoque e vendas de
-adegas (lojas de vinhos e destilados). Cada adega possui seus próprios usuários, produtos e
-movimentações, totalmente isolados dos dados de outras adegas.
+empresas (como lojas de vinhos e destilados). Cada empresa possui seus próprios usuários, produtos e
+movimentações, totalmente isolados dos dados de outras empresas.
 
 ## Stack técnica
 
@@ -19,7 +19,7 @@ movimentações, totalmente isolados dos dados de outras adegas.
 ### Nota técnica: por que `node:sqlite` em vez do Prisma Client em runtime?
 
 O modelo de dados foi desenhado e está **100% documentado em `prisma/schema.prisma`**,
-seguindo exatamente a estrutura pedida (Adega, User, Product, Movement, enums, relações,
+seguindo exatamente a estrutura pedida (Empresa, User, Product, Movement, enums, relações,
 índices). Em um ambiente com acesso normal à internet, esse schema funciona diretamente com
 `npx prisma migrate dev` e `@prisma/client`.
 
@@ -58,13 +58,13 @@ ele apaga e recria todos os dados.
 
 ## Credenciais de demonstração
 
-Todos os usuários abaixo pertencem à adega **"Adega do Renan"** e usam a senha `senha123`.
+Todos os usuários abaixo pertencem à empresa **"Empresa Exemplo"** e usam a senha `senha123`.
 
 | E-mail                  | Papel        | O que enxerga |
 |--------------------------|--------------|---------------|
-| `dono@adega.com`         | Dono (OWNER) | Acesso total: movimentação, produtos (CRUD completo) e todos os relatórios (todos os períodos, sugestão de compra, ranking de recorrência). |
-| `gerente@adega.com`      | Gerente (MANAGER) | Movimentação de estoque e relatório **limitado**: apenas estoque atual e faturamento/saídas do mês corrente. Produtos em modo somente leitura. |
-| `funcionario@adega.com`  | Funcionário (EMPLOYEE) | Apenas a tela de Movimentação de Estoque (entradas e saídas) e listagem de produtos somente leitura, para apoiar o registro de movimentações. Sem acesso a relatórios ou cadastro de produtos. |
+| `dono@empresaexemplo.com`         | Dono (OWNER) | Acesso total: movimentação, produtos (CRUD completo) e todos os relatórios (todos os períodos, sugestão de compra, ranking de recorrência). |
+| `gerente@empresaexemplo.com`      | Gerente (MANAGER) | Movimentação de estoque e relatório **limitado**: apenas estoque atual e faturamento/saídas do mês corrente. Produtos em modo somente leitura. |
+| `funcionario@empresaexemplo.com`  | Funcionário (EMPLOYEE) | Apenas a tela de Movimentação de Estoque (entradas e saídas) e listagem de produtos somente leitura, para apoiar o registro de movimentações. Sem acesso a relatórios ou cadastro de produtos. |
 
 ## Telas e funcionalidades
 
@@ -102,9 +102,9 @@ Server Component e rotas de API), nunca apenas escondendo botões:
   permissão).
 - Todas as rotas de API (`/api/produtos`, `/api/produtos/[id]`, `/api/movimentos`, etc.)
   verificam a sessão e o papel do usuário antes de executar qualquer operação, e todas as
-  consultas ao banco são filtradas por `adegaId` do usuário logado — garantindo isolamento
-  entre adegas (multi-tenant) mesmo que alguém tente manipular um ID de produto de outra
-  adega diretamente pela API.
+  consultas ao banco são filtradas por `empresaId` do usuário logado — garantindo isolamento
+  entre empresas (multi-tenant) mesmo que alguém tente manipular um ID de produto de outra
+  empresa diretamente pela API.
 
 ## Limitações conhecidas
 
@@ -116,7 +116,7 @@ Server Component e rotas de API), nunca apenas escondendo botões:
   acima); a camada de dados usa `node:sqlite` seguindo fielmente o mesmo schema.
 - Gestão de usuários (criar gerentes/funcionários pela UI) não foi implementada nesta versão
   — é um "nice-to-have" citado no escopo original e pode ser adicionada futuramente
-  (o modelo de dados já suporta múltiplos usuários por adega).
+  (o modelo de dados já suporta múltiplos usuários por empresa).
 - Sem paginação nas listagens (adequado ao volume de dados de um protótipo/demo).
 - `node:sqlite` é uma API ainda experimental no Node.js (emite um aviso no console); estável o
   suficiente para este protótipo, mas vale acompanhar a evolução da API em produção.

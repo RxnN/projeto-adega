@@ -7,7 +7,7 @@ import { nextCounter } from "./counter";
 
 function toProduct(p: {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   code: string;
   barcode: string | null;
@@ -70,7 +70,7 @@ async function nextProductCode(filialId: string): Promise<string> {
 }
 
 export async function createProduct(input: {
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   name: string;
   category: string;
@@ -87,7 +87,7 @@ export async function createProduct(input: {
   const product = await prisma.product.create({
     data: {
       id: createId("prod"),
-      adegaId: input.adegaId,
+      empresaId: input.empresaId,
       filialId: input.filialId,
       code,
       barcode: input.barcode,

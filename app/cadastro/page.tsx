@@ -12,7 +12,7 @@ export default async function CadastroPage() {
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h1 className="font-display text-3xl font-extrabold">🍷 Adegas</h1>
+          <h1 className="font-display text-3xl font-extrabold">Omnix Connect</h1>
           <p className="mt-1" style={{ color: "var(--ink-soft)" }}>
             Crie sua conta SaaS multi-tenant
           </p>

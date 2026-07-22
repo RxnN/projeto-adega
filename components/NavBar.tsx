@@ -92,21 +92,24 @@ export default function NavBar({
     <>
       {/* Barra superior compacta — só em telas estreitas (celular) */}
       <div
-        className="md:hidden flex items-center justify-between px-4 py-3 border-b sticky top-0 z-30"
+        className="md:hidden flex items-center justify-between px-3 py-2.5 border-b sticky top-0 z-30 shadow-sm"
         style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
       >
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Abrir menu"
-          className="flex items-center justify-center w-9 h-9 rounded-full border"
+          className="flex items-center justify-center w-9 h-9 rounded-lg border"
           style={{ borderColor: "var(--border)", color: "var(--ink)" }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <span className="font-display font-extrabold text-base tracking-tight truncate mx-3">{user.adegaName}</span>
+        <div className="flex items-center gap-2 min-w-0 mx-3">
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent text-accent-ink text-xs font-bold shrink-0">OC</span>
+          <span className="font-display font-extrabold text-sm tracking-tight truncate">Omnix Connect</span>
+        </div>
         <ThemeToggle />
       </div>
 
@@ -120,14 +123,20 @@ export default function NavBar({
       )}
 
       <header
-        className={`w-60 shrink-0 flex flex-col border-r fixed md:sticky top-0 left-0 h-screen overflow-y-auto z-50 transition-transform duration-200 md:translate-x-0 ${
+        className={`w-64 shrink-0 flex flex-col border-r fixed md:sticky top-0 left-0 h-screen overflow-y-auto z-50 transition-transform duration-200 md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)" }}
       >
-        <div className="px-5 py-5 border-b space-y-2" style={{ borderColor: "var(--border)" }}>
+        <div className="px-4 py-5 border-b space-y-4" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center justify-between gap-2">
-            <span className="font-display font-extrabold text-lg tracking-tight truncate block">{user.adegaName}</span>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent text-accent-ink text-sm font-bold shadow-sm shrink-0">OC</span>
+              <span className="min-w-0">
+                <strong className="font-display font-extrabold text-base leading-none tracking-tight block">Omnix Connect</strong>
+                <small className="text-[11px] block mt-1 truncate" style={{ color: "var(--ink-soft)" }}>Gestão comercial</small>
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -140,6 +149,7 @@ export default function NavBar({
               </svg>
             </button>
           </div>
+          <p className="text-xs font-semibold truncate" style={{ color: "var(--ink-soft)" }}>{user.empresaName}</p>
           {user.role === "OWNER" && <FilialSwitcher filiais={filiais} currentFilialId={currentFilialId} />}
         </div>
 
@@ -150,7 +160,7 @@ export default function NavBar({
               <Link
                 key={l.href}
                 href={l.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-full text-sm font-semibold transition-colors"
+                className="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-[var(--surface-2)]"
                 style={
                   active
                     ? { backgroundColor: "var(--accent)", color: "var(--accent-ink)" }
@@ -168,11 +178,18 @@ export default function NavBar({
 
         <div className="px-4 py-4 border-t space-y-3" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold truncate">{user.name}</p>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex items-center justify-center w-9 h-9 rounded-full text-xs font-bold shrink-0" style={{ backgroundColor: "var(--surface-2)", color: "var(--ink)" }}>
+                {user.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+              <p className="text-sm font-semibold truncate" style={{ color: "var(--ink)" }}>
+                {user.name}
+              </p>
               <p className="text-xs" style={{ color: "var(--ink-soft)" }}>
                 {roleLabel[user.role]}
               </p>
+              </div>
             </div>
             <div className="hidden md:block">
               <ThemeToggle />

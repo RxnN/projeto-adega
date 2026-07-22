@@ -4,9 +4,9 @@ import type { Role } from "./types";
 
 export interface SessionData {
   userId: string;
-  adegaId: string;
-  adegaName: string;
-  /** Null = OWNER (enxerga/administra todas as filiais da adega). MANAGER e EMPLOYEE
+  empresaId: string;
+  empresaName: string;
+  /** Null = OWNER (enxerga/administra todas as filiais da empresa). MANAGER e EMPLOYEE
    * são sempre travados na própria filial. */
   filialId: string | null;
   name: string;
@@ -29,7 +29,7 @@ if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
 
 export const sessionOptions = {
   password: process.env.SESSION_SECRET,
-  cookieName: "adegas_session",
+  cookieName: "empresa_session",
   cookieOptions: {
     secure: process.env.NODE_ENV === "production",
     httpOnly: true,

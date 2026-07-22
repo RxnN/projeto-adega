@@ -1,22 +1,18 @@
 import { requireRole } from "@/lib/auth";
-import { getAdegaById, listFiliais } from "@/lib/repo";
+import { getEmpresaById, listFiliais } from "@/lib/repo";
 import FilialForm from "@/components/FilialForm";
 import { formatDateShort } from "@/lib/format";
+import PageHeader from "@/components/PageHeader";
 
 export default async function FiliaisPage() {
   const user = await requireRole(["OWNER"]);
-  const [filiais, adega] = await Promise.all([listFiliais(user.adegaId), getAdegaById(user.adegaId)]);
-  const limite = adega?.maxFiliais ?? 1;
+  const [filiais, empresa] = await Promise.all([listFiliais(user.empresaId), getEmpresaById(user.empresaId)]);
+  const limite = empresa?.maxFiliais ?? 1;
   const noLimite = filiais.length >= limite;
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold">Filiais</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>
-          Cada filial tem seu próprio catálogo de produtos e estoque. Troque entre elas pelo seletor no menu.
-        </p>
-      </div>
+    <div className="space-y-6 max-w-4xl">
+      <PageHeader eyebrow="Estrutura da empresa" title="Filiais" description="Gerencie as unidades e mantenha catálogos e estoques separados." />
 
       <div className="card space-y-3">
         <div className="flex items-center justify-between">
@@ -25,10 +21,10 @@ export default async function FiliaisPage() {
             {filiais.length} de {limite} licenciada(s)
           </span>
         </div>
-        <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+        <ul className="grid sm:grid-cols-2 gap-3">
           {filiais.map((f) => (
-            <li key={f.id} className="py-2 flex items-center justify-between">
-              <span className="font-medium">{f.name}</span>
+            <li key={f.id} className="rounded-xl border p-4 flex items-center justify-between gap-3" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface-2)" }}>
+              <span><strong className="block">{f.name}</strong><small style={{ color: "var(--ink-soft)" }}>Filial ativa</small></span>
               <span className="text-xs" style={{ color: "var(--ink-soft)" }}>
                 criada em {formatDateShort(new Date(f.createdAt))}
               </span>

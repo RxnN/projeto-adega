@@ -32,13 +32,13 @@ export default function AppShell({
   }
 
   return (
-    <div className="md:flex min-h-screen">
+    <div className="app-shell">
       <NavBar user={user} filiais={filiais} currentFilialId={currentFilialId} />
-      <div className="flex-1 min-w-0">
+      <div className="app-content">
         {subscriptionStatus?.expiringSoon && subscriptionStatus.daysRemaining !== null && (
           <SubscriptionBanner daysRemaining={subscriptionStatus.daysRemaining} />
         )}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
+        <main className="page-container">{children}</main>
       </div>
     </div>
   );

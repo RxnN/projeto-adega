@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/session";
-import { createFilial, getAdegaById, listFiliais } from "@/lib/repo";
+import { createFilial, getEmpresaById, listFiliais } from "@/lib/repo";
 import { withErrorHandling } from "@/lib/api-handler";
 
 const filialSchema = z.object({ name: z.string().trim().min(1, "Informe o nome da filial.") });
@@ -10,7 +10,7 @@ export const GET = withErrorHandling(async () => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
-  const filiais = await listFiliais(user.adegaId);
+  const filiais = await listFiliais(user.empresaId);
   return NextResponse.json({ filiais });
 });
 
@@ -27,8 +27,8 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos." }, { status: 400 });
   }
 
-  const [adega, existentes] = await Promise.all([getAdegaById(user.adegaId), listFiliais(user.adegaId)]);
-  const limite = adega?.maxFiliais ?? 1;
+  const [empresa, existentes] = await Promise.all([getEmpresaById(user.empresaId), listFiliais(user.empresaId)]);
+  const limite = empresa?.maxFiliais ?? 1;
   if (existentes.length >= limite) {
     return NextResponse.json(
       {
@@ -38,6 +38,6 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     );
   }
 
-  const filial = await createFilial(user.adegaId, parsed.data.name);
+  const filial = await createFilial(user.empresaId, parsed.data.name);
   return NextResponse.json({ ok: true, filial });
 });

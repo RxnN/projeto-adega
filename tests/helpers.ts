@@ -1,48 +1,48 @@
 import { afterAll } from "vitest";
 import { prisma } from "@/lib/prisma";
-import { createAdega, createFilial, createProduct, createUser } from "@/lib/repo";
+import { createEmpresa, createFilial, createProduct, createUser } from "@/lib/repo";
 import type { Filial, Product } from "@/lib/types";
 
 // Os testes rodam contra o mesmo Postgres (Neon) usado em desenvolvimento, mas
-// cada teste cria sua própria Adega isolada (nunca toca nos dados reais/seed),
+// cada teste cria sua própria Empresa isolada (nunca toca nos dados reais/seed),
 // e tudo o que foi criado é apagado ao final do arquivo de teste.
-const createdAdegaIds: string[] = [];
+const createdEmpresaIds: string[] = [];
 let emailCounter = 0;
 
 afterAll(async () => {
-  for (const adegaId of createdAdegaIds) {
-    await prisma.movement.deleteMany({ where: { adegaId } });
-    await prisma.pedido.deleteMany({ where: { adegaId } });
-    await prisma.promotion.deleteMany({ where: { adegaId } });
-    await prisma.product.deleteMany({ where: { adegaId } });
-    await prisma.counter.deleteMany({ where: { filial: { adegaId } } });
-    await prisma.user.deleteMany({ where: { adegaId } });
-    await prisma.filial.deleteMany({ where: { adegaId } });
-    await prisma.adega.deleteMany({ where: { id: adegaId } });
+  for (const empresaId of createdEmpresaIds) {
+    await prisma.movement.deleteMany({ where: { empresaId } });
+    await prisma.pedido.deleteMany({ where: { empresaId } });
+    await prisma.promotion.deleteMany({ where: { empresaId } });
+    await prisma.product.deleteMany({ where: { empresaId } });
+    await prisma.counter.deleteMany({ where: { filial: { empresaId } } });
+    await prisma.user.deleteMany({ where: { empresaId } });
+    await prisma.filial.deleteMany({ where: { empresaId } });
+    await prisma.empresa.deleteMany({ where: { id: empresaId } });
   }
   await prisma.$disconnect();
 });
 
 export async function seedFixture() {
-  const adega = await createAdega(`Adega de Teste ${Math.random().toString(36).slice(2)}`, "12345678901");
-  createdAdegaIds.push(adega.id);
-  const filial = await createFilial(adega.id, "Matriz");
+  const empresa = await createEmpresa(`Empresa de Teste ${Math.random().toString(36).slice(2)}`, "12345678901");
+  createdEmpresaIds.push(empresa.id);
+  const filial = await createFilial(empresa.id, "Matriz");
   const user = await createUser({
-    adegaId: adega.id,
+    empresaId: empresa.id,
     name: "Usuário de Teste",
     email: `teste-${emailCounter++}-${Date.now()}@example.com`,
     passwordHash: "hash-fake",
     role: "OWNER",
   });
-  return { adega, filial, user };
+  return { empresa, filial, user };
 }
 
 export async function seedProduct(
-  filial: Pick<Filial, "id" | "adegaId">,
+  filial: Pick<Filial, "id" | "empresaId">,
   overrides: Partial<Parameters<typeof createProduct>[0]> = {}
 ): Promise<Product> {
   return createProduct({
-    adegaId: filial.adegaId,
+    empresaId: filial.empresaId,
     filialId: filial.id,
     name: overrides.name ?? "Produto de Teste",
     category: overrides.category ?? "Categoria",

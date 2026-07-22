@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { getUserByEmail, getAdegaById } from "@/lib/repo";
+import { getUserByEmail, getEmpresaById } from "@/lib/repo";
 import { getSession } from "@/lib/session";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { withErrorHandling } from "@/lib/api-handler";
@@ -43,13 +43,13 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return NextResponse.json({ error: "E-mail ou senha inválidos." }, { status: 401 });
   }
 
-  const adega = await getAdegaById(user.adegaId);
+  const empresa = await getEmpresaById(user.empresaId);
 
   const session = await getSession();
   session.user = {
     userId: user.id,
-    adegaId: user.adegaId,
-    adegaName: adega?.name ?? "Adega",
+    empresaId: user.empresaId,
+    empresaName: empresa?.name ?? "Empresa",
     filialId: user.filialId,
     name: user.name,
     email: user.email,

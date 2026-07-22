@@ -10,11 +10,11 @@ import { seedFixture, seedProduct } from "./helpers";
 
 describe("createPedido", () => {
   it("saída (OUT) diminui o estoque e soma o total corretamente", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { salePrice: 15, currentStock: 10 });
 
     const pedido = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -31,11 +31,11 @@ describe("createPedido", () => {
   });
 
   it("entrada (IN) aumenta o estoque", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { costPrice: 8, currentStock: 5 });
 
     await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "IN",
       paymentMethod: "DINHEIRO",
@@ -48,11 +48,11 @@ describe("createPedido", () => {
   });
 
   it("numera pedidos de entrada e saída em sequências independentes", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { currentStock: 100 });
 
     const out1 = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -60,7 +60,7 @@ describe("createPedido", () => {
       items: [{ productId: product.id, quantity: 1, unitValue: 10, source: "MANUAL" }],
     });
     const in1 = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "IN",
       paymentMethod: "DINHEIRO",
@@ -68,7 +68,7 @@ describe("createPedido", () => {
       items: [{ productId: product.id, quantity: 1, unitValue: 10, source: "MANUAL" }],
     });
     const out2 = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -82,12 +82,12 @@ describe("createPedido", () => {
   });
 
   it("com múltiplos itens, ajusta o estoque de cada produto envolvido", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const a = await seedProduct(filial, { name: "A", currentStock: 10 });
     const b = await seedProduct(filial, { name: "B", currentStock: 10 });
 
     await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -126,11 +126,11 @@ describe("checkPedidoStock", () => {
 
 describe("cancelPedido", () => {
   it("cancelar uma saída devolve o estoque", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { currentStock: 10 });
 
     const pedido = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -147,11 +147,11 @@ describe("cancelPedido", () => {
   });
 
   it("cancelar uma entrada remove o estoque que ela havia adicionado", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { currentStock: 0 });
 
     const pedido = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "IN",
       paymentMethod: "DINHEIRO",
@@ -166,11 +166,11 @@ describe("cancelPedido", () => {
   });
 
   it("cancelar duas vezes não altera o estoque na segunda vez", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { currentStock: 10 });
 
     const pedido = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -187,11 +187,11 @@ describe("cancelPedido", () => {
 
 describe("checkPedidoCancelStock", () => {
   it("bloqueia cancelamento de entrada quando parte do estoque recebido já foi consumida", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { currentStock: 0 });
 
     const entrada = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "IN",
       paymentMethod: "DINHEIRO",
@@ -199,7 +199,7 @@ describe("checkPedidoCancelStock", () => {
       items: [{ productId: product.id, quantity: 10, unitValue: 10, source: "MANUAL" }],
     });
     await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -214,11 +214,11 @@ describe("checkPedidoCancelStock", () => {
   });
 
   it("não bloqueia cancelamento de saída (sempre devolve estoque, nunca fica negativo)", async () => {
-    const { adega, filial, user } = await seedFixture();
+    const { empresa, filial, user } = await seedFixture();
     const product = await seedProduct(filial, { currentStock: 10 });
 
     const saida = await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filial.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",

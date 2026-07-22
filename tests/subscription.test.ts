@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getSubscriptionStatus, isSubscriptionExpired } from "@/lib/auth";
-import { getAdegaById } from "@/lib/repo";
+import { getEmpresaById } from "@/lib/repo";
 import { prisma } from "@/lib/prisma";
 import { seedFixture } from "./helpers";
 
@@ -49,15 +49,15 @@ describe("isSubscriptionExpired", () => {
   });
 });
 
-describe("Adega.paidUntil (integração)", () => {
-  it("nasce nula e reflete o valor aprovado via getAdegaById", async () => {
-    const { adega } = await seedFixture();
-    expect((await getAdegaById(adega.id))?.paidUntil).toBeNull();
+describe("Empresa.paidUntil (integração)", () => {
+  it("nasce nula e reflete o valor aprovado via getEmpresaById", async () => {
+    const { empresa } = await seedFixture();
+    expect((await getEmpresaById(empresa.id))?.paidUntil).toBeNull();
 
     const until = new Date(daysFromNow(30));
-    await prisma.adega.update({ where: { id: adega.id }, data: { approved: true, paidUntil: until } });
+    await prisma.empresa.update({ where: { id: empresa.id }, data: { approved: true, paidUntil: until } });
 
-    const reloaded = await getAdegaById(adega.id);
+    const reloaded = await getEmpresaById(empresa.id);
     expect(reloaded?.approved).toBe(true);
     expect(new Date(reloaded!.paidUntil!).getTime()).toBe(until.getTime());
   });

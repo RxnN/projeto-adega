@@ -87,7 +87,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   // Uma única consulta em lote para todos os códigos de barras da nota, em vez de uma
   // consulta por item (que com uma nota maliciosa de muitos itens vira uma enxurrada de
-  // conexões simultâneas no banco compartilhado por todas as adegas).
+  // conexões simultâneas no banco compartilhado por todas as empresas).
   const eans = Array.from(new Set(parsedItems.map((it) => it.ean).filter((e): e is string => Boolean(e))));
   const filialId = await getCurrentFilialId(user);
   const matchedProducts = await getProductsByBarcodes(eans, filialId);

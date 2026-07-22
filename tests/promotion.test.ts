@@ -7,7 +7,7 @@ import { seedFixture, seedProduct } from "./helpers";
 function makePromotion(overrides: Partial<Promotion> = {}): Promotion {
   return {
     id: "promo_test",
-    adegaId: "adega_test",
+    empresaId: "empresa_test",
     filialId: "filial_test",
     productId: "prod_test",
     promoPrice: 15,
@@ -100,13 +100,13 @@ describe("isPromotionActive", () => {
 
 describe("promoções são isoladas por filial (integração)", () => {
   it("promoção criada numa filial não aparece pra um produto equivalente de outra filial", async () => {
-    const { adega, filial: filialA, user } = await seedFixture();
-    const filialB = await createFilial(adega.id, "Filial B");
+    const { empresa, filial: filialA, user } = await seedFixture();
+    const filialB = await createFilial(empresa.id, "Filial B");
     const productA = await seedProduct(filialA, { salePrice: 20 });
     const productB = await seedProduct(filialB, { salePrice: 20 });
 
     await createPromotion({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filialA.id,
       productId: productA.id,
       promoPrice: 10,

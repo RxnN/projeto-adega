@@ -13,7 +13,7 @@ O mecanismo de captura de imagem do ambiente de auditoria (screenshot do Browser
 ### 1. Login
 - **Rota**: `/`
 - **Arquivo**: `app/page.tsx` + `components/LoginForm.tsx`
-- **Descrição**: Card centralizado (largura máx. ~448px) sobre fundo neutro. Título "🍷 Adegas" + subtítulo "Gestão de estoque e vendas". Campos E-mail e Senha, botão "Entrar" (pill, cor de destaque). Abaixo, link "Cadastre sua Adega". Um segundo card menor lista credenciais de demonstração.
+- **Descrição**: Card centralizado (largura máx. ~448px) sobre fundo neutro. Título "Omnix Connect" + subtítulo "Gestão conectada para o seu negócio". Campos E-mail e Senha, botão "Entrar" (pill, cor de destaque). Abaixo, link "Cadastre sua empresa". Um segundo card menor lista credenciais de demonstração.
 - **Screenshot correspondente**: não gerado (ver nota acima).
 
 ### 2. Cadastro

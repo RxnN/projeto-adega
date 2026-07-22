@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { getCurrentUser } from "@/lib/session";
 import { canManageProducts } from "@/lib/auth";
-import { createProduct, getAdegaById, getProductByCode, updateProduct } from "@/lib/repo";
+import { createProduct, getEmpresaById, getProductByCode, updateProduct } from "@/lib/repo";
 import type { PackageType } from "@/lib/types";
 import { withErrorHandling } from "@/lib/api-handler";
 import { getCurrentFilialId } from "@/lib/filial-context";
@@ -16,10 +16,10 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return NextResponse.json({ error: "Você não tem permissão para importar produtos." }, { status: 403 });
   }
 
-  const adega = await getAdegaById(user.adegaId);
-  if (!adega?.importEnabled) {
+  const empresa = await getEmpresaById(user.empresaId);
+  if (!empresa?.importEnabled) {
     return NextResponse.json(
-      { error: "Importação em lote não está habilitada para sua adega. Fale com a gente para habilitar." },
+      { error: "Importação em lote não está habilitada para sua empresa. Fale com a gente para habilitar." },
       { status: 403 }
     );
   }
@@ -112,7 +112,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     } else {
       const currentStock = Number(row["Estoque Atual"]);
       await createProduct({
-        adegaId: user.adegaId,
+        empresaId: user.empresaId,
         filialId,
         name,
         category,

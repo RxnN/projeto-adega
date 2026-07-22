@@ -1,7 +1,7 @@
-// Aprova (libera) ou revoga o acesso de uma adega — cadastro self-service nasce travado
+// Aprova (libera) ou revoga o acesso de uma empresa — cadastro self-service nasce travado
 // até o pagamento ser confirmado e a conta ser aprovada manualmente por aqui.
-// Uso: npx tsx scripts/approve-adega.ts email@do-dono.com on [dias]   (dias default: 30)
-//      npx tsx scripts/approve-adega.ts email@do-dono.com off
+// Uso: npx tsx scripts/approve-empresa.ts email@do-dono.com on [dias]   (dias default: 30)
+//      npx tsx scripts/approve-empresa.ts email@do-dono.com off
 
 import { prisma } from "../lib/prisma";
 
@@ -11,7 +11,7 @@ async function main() {
   const [email, action, daysArg] = process.argv.slice(2);
 
   if (!email || (action !== "on" && action !== "off")) {
-    console.error("Uso: npx tsx scripts/approve-adega.ts <email-do-usuario> <on|off> [dias]");
+    console.error("Uso: npx tsx scripts/approve-empresa.ts <email-do-usuario> <on|off> [dias]");
     process.exit(1);
   }
 
@@ -29,15 +29,15 @@ async function main() {
 
   const paidUntil = action === "on" ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null;
 
-  const adega = await prisma.adega.update({
-    where: { id: user.adegaId },
+  const empresa = await prisma.empresa.update({
+    where: { id: user.empresaId },
     data: { approved: action === "on", paidUntil },
   });
 
   console.log(
     action === "on"
-      ? `Adega "${adega.name}" (${adega.id}) APROVADA — acesso liberado até ${paidUntil!.toLocaleDateString("pt-BR")} (${days} dias).`
-      : `Adega "${adega.name}" (${adega.id}) com acesso REVOGADO.`
+      ? `Empresa "${empresa.name}" (${empresa.id}) APROVADA — acesso liberado até ${paidUntil!.toLocaleDateString("pt-BR")} (${days} dias).`
+      : `Empresa "${empresa.name}" (${empresa.id}) com acesso REVOGADO.`
   );
 }
 

@@ -33,10 +33,10 @@ describe("POST /api/login", () => {
   });
 
   it("autentica com credenciais corretas", async () => {
-    const { adega } = await seedFixture();
+    const { empresa } = await seedFixture();
     const passwordHash = await bcrypt.hash("senha-correta", 10);
     const email = `login-${Date.now()}@teste.com`;
-    await createUser({ adegaId: adega.id, name: "Login Teste", email, passwordHash, role: "OWNER" });
+    await createUser({ empresaId: empresa.id, name: "Login Teste", email, passwordHash, role: "OWNER" });
 
     const res = await POST(makeRequest({ email, password: "senha-correta" }, "10.0.0.2"));
     const json = await res.json();
@@ -46,10 +46,10 @@ describe("POST /api/login", () => {
   });
 
   it("rejeita senha errada pra usuário existente", async () => {
-    const { adega } = await seedFixture();
+    const { empresa } = await seedFixture();
     const passwordHash = await bcrypt.hash("senha-correta", 10);
     const email = `login-wrong-${Date.now()}@teste.com`;
-    await createUser({ adegaId: adega.id, name: "Login Teste", email, passwordHash, role: "OWNER" });
+    await createUser({ empresaId: empresa.id, name: "Login Teste", email, passwordHash, role: "OWNER" });
 
     const res = await POST(makeRequest({ email, password: "senha-errada" }, "10.0.0.3"));
 

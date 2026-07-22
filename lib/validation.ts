@@ -44,7 +44,7 @@ const phoneSchema = z
   .refine((v) => v.length === 10 || v.length === 11, "Informe um telefone válido, com DDD.");
 
 export const cadastroSchema = z.object({
-  adegaName: z.string().trim().min(1, "Informe o nome da empresa."),
+  empresaName: z.string().trim().min(1, "Informe o nome da empresa."),
   cnpjCpf: cnpjCpfSchema,
   userName: z.string().trim().min(1, "Informe seu nome."),
   phone: phoneSchema,

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 export default function CadastroForm() {
-  const [adegaName, setAdegaName] = useState("");
+  const [empresaName, setEmpresaName] = useState("");
   const [cnpjCpf, setCnpjCpf] = useState("");
   const [userName, setUserName] = useState("");
   const [phone, setPhone] = useState("");
@@ -28,7 +28,7 @@ export default function CadastroForm() {
       const res = await fetch("/api/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adegaName, cnpjCpf, userName, phone, email, password }),
+        body: JSON.stringify({ empresaName, cnpjCpf, userName, phone, email, password }),
       });
       
       const data = await res.json();
@@ -51,17 +51,17 @@ export default function CadastroForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="label" htmlFor="adegaName">
+        <label className="label" htmlFor="empresaName">
           Nome da Empresa
         </label>
         <input
-          id="adegaName"
+          id="empresaName"
           type="text"
           required
           className="input"
-          value={adegaName}
-          onChange={(e) => setAdegaName(e.target.value)}
-          placeholder="Ex: Adega do Porto"
+          value={empresaName}
+          onChange={(e) => setEmpresaName(e.target.value)}
+          placeholder="Ex: Empresa Exemplo Ltda"
         />
       </div>
 
@@ -121,7 +121,7 @@ export default function CadastroForm() {
           className="input"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="dono@suaadega.com"
+          placeholder="dono@suaempresa.com"
         />
       </div>
 

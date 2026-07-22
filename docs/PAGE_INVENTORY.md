@@ -27,7 +27,7 @@
 - **Arquivo**: `app/aguardando-aprovacao/page.tsx`
 - **Objetivo**: Tela de espera pra conta ainda não aprovada manualmente, ou pausada por assinatura vencida — mesma rota, mensagem condicional.
 - **Componentes**: nenhum (JSX direto)
-- **Dependências**: `lib/auth.ts` (`isSubscriptionExpired`), `lib/repo` (`getAdegaById`)
+- **Dependências**: `lib/auth.ts` (`isSubscriptionExpired`), `lib/repo` (`getEmpresaById`)
 - **Complexidade**: Baixa
 
 ### Acesso negado
@@ -71,7 +71,7 @@
 - **Arquivo**: `app/produtos/page.tsx`
 - **Objetivo**: Catálogo da filial ativa — tabela com KPIs (valor total em estoque, produtos abaixo do mínimo), import/export de planilha.
 - **Componentes**: `ImportExportProducts`
-- **Dependências**: `lib/repo` (`listProducts`, `getAdegaById`, `listPromotionsByFilial`), `lib/pricing.ts`
+- **Dependências**: `lib/repo` (`listProducts`, `getEmpresaById`, `listPromotionsByFilial`), `lib/pricing.ts`
 - **Complexidade**: Média
 
 ### Novo Produto
@@ -115,7 +115,7 @@
 - **Arquivo**: `app/filiais/page.tsx`
 - **Objetivo**: Gestão multi-loja — listar filiais e criar novas dentro do limite licenciado (só dono).
 - **Componentes**: `FilialForm`
-- **Dependências**: `lib/repo` (`listFiliais`, `getAdegaById`)
+- **Dependências**: `lib/repo` (`listFiliais`, `getEmpresaById`)
 - **Complexidade**: Baixa
 
 ## Relatórios
@@ -132,7 +132,7 @@
 
 ### Root Layout
 - **Arquivo**: `app/layout.tsx`
-- **Objetivo**: Busca usuário/adega/filiais/assinatura no servidor, degrada graciosamente em caso de erro, delega renderização do shell para `AppShell`.
+- **Objetivo**: Busca usuário/empresa/filiais/assinatura no servidor, degrada graciosamente em caso de erro, delega renderização do shell para `AppShell`.
 - **Componentes**: `AppShell`
 - **Dependências**: `lib/session.ts`, `lib/repo`, `lib/auth.ts`, `lib/filial-context.ts`
 - **Complexidade**: Média (não é UI em si, mas orquestra dados que toda página depende)

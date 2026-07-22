@@ -6,7 +6,7 @@ import { toIso } from "./shared";
 
 function toPromotion(p: {
   id: string;
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   productId: string;
   promoPrice: Prisma.Decimal;
@@ -46,7 +46,7 @@ export async function listPromotionsByProductIds(filialId: string, productIds: s
 }
 
 export async function createPromotion(input: {
-  adegaId: string;
+  empresaId: string;
   filialId: string;
   productId: string;
   promoPrice: number;
@@ -58,7 +58,7 @@ export async function createPromotion(input: {
   const promotion = await prisma.promotion.create({
     data: {
       id: createId("promo"),
-      adegaId: input.adegaId,
+      empresaId: input.empresaId,
       filialId: input.filialId,
       productId: input.productId,
       promoPrice: input.promoPrice,

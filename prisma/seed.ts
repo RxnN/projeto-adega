@@ -1,16 +1,16 @@
 // Script de seed do banco de dados de demonstração.
 // Usa o Prisma Client (lib/prisma.ts), seguindo o modelo de dados em prisma/schema.prisma.
 //
-// Importante: este script só remove os dados da PRÓPRIA adega de demonstração
-// (identificada pelo e-mail do dono "dono@adega.com"), nunca o banco inteiro —
-// o mesmo Postgres pode estar hospedando outras adegas reais.
+// Importante: este script só remove os dados da PRÓPRIA empresa de demonstração
+// (identificada pelo e-mail do dono "dono@empresaexemplo.com"), nunca o banco inteiro —
+// o mesmo Postgres pode estar hospedando outras empresas reais.
 
 import bcrypt from "bcryptjs";
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { createId } from "../lib/id";
 
-const DEMO_OWNER_EMAIL = "dono@adega.com";
+const DEMO_OWNER_EMAIL = "dono@empresaexemplo.com";
 
 function daysAgo(n: number, hour = 10): Date {
   const d = new Date();
@@ -36,25 +36,25 @@ async function main() {
   const existingOwner = await prisma.user.findUnique({ where: { email: DEMO_OWNER_EMAIL } });
   if (existingOwner) {
     console.log("Removendo dados de demonstração anteriores...");
-    const adegaId = existingOwner.adegaId;
-    await prisma.movement.deleteMany({ where: { adegaId } });
-    await prisma.pedido.deleteMany({ where: { adegaId } });
-    await prisma.product.deleteMany({ where: { adegaId } });
-    await prisma.counter.deleteMany({ where: { filial: { adegaId } } });
-    await prisma.user.deleteMany({ where: { adegaId } });
-    await prisma.filial.deleteMany({ where: { adegaId } });
-    await prisma.adega.deleteMany({ where: { id: adegaId } });
+    const empresaId = existingOwner.empresaId;
+    await prisma.movement.deleteMany({ where: { empresaId } });
+    await prisma.pedido.deleteMany({ where: { empresaId } });
+    await prisma.product.deleteMany({ where: { empresaId } });
+    await prisma.counter.deleteMany({ where: { filial: { empresaId } } });
+    await prisma.user.deleteMany({ where: { empresaId } });
+    await prisma.filial.deleteMany({ where: { empresaId } });
+    await prisma.empresa.deleteMany({ where: { id: empresaId } });
   }
 
-  console.log("Criando adega...");
+  console.log("Criando empresa...");
   const paidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const adega = await prisma.adega.create({
-    data: { id: createId("adega"), name: "Adega do Renan", importEnabled: true, approved: true, paidUntil },
+  const empresa = await prisma.empresa.create({
+    data: { id: createId("empresa"), name: "Empresa Exemplo", importEnabled: true, approved: true, paidUntil },
   });
 
   console.log("Criando filial...");
   const filial = await prisma.filial.create({
-    data: { id: createId("filial"), adegaId: adega.id, name: "Adega do Renan" },
+    data: { id: createId("filial"), empresaId: empresa.id, name: "Empresa Exemplo" },
   });
 
   console.log("Criando usuários...");
@@ -67,14 +67,14 @@ async function main() {
     filialId: string | null
   ) {
     const user = await prisma.user.create({
-      data: { id: createId("user"), adegaId: adega.id, filialId, name, email, passwordHash, role },
+      data: { id: createId("user"), empresaId: empresa.id, filialId, name, email, passwordHash, role },
     });
     return user.id;
   }
 
   const donoId = await insertUser("Renan Fernandes", DEMO_OWNER_EMAIL, "OWNER", null);
-  const gerenteId = await insertUser("Marina Souza", "gerente@adega.com", "MANAGER", filial.id);
-  const funcionarioId = await insertUser("João Pereira", "funcionario@adega.com", "EMPLOYEE", filial.id);
+  const gerenteId = await insertUser("Marina Souza", "gerente@empresaexemplo.com", "MANAGER", filial.id);
+  const funcionarioId = await insertUser("João Pereira", "funcionario@empresaexemplo.com", "EMPLOYEE", filial.id);
   const userIds = [donoId, gerenteId, funcionarioId];
 
   console.log("Criando produtos...");
@@ -98,7 +98,7 @@ async function main() {
     const product = await prisma.product.create({
       data: {
         id: createId("prod"),
-        adegaId: adega.id,
+        empresaId: empresa.id,
         filialId: filial.id,
         code,
         name: p.name,
@@ -133,7 +133,7 @@ async function main() {
     const pedido = await prisma.pedido.create({
       data: {
         id: createId("pedido"),
-        adegaId: adega.id,
+        empresaId: empresa.id,
         filialId: filial.id,
         type: opts.type,
         number: pedidoNumbers[opts.type],
@@ -147,7 +147,7 @@ async function main() {
     await prisma.movement.create({
       data: {
         id: createId("mov"),
-        adegaId: adega.id,
+        empresaId: empresa.id,
         filialId: filial.id,
         productId: opts.productId,
         type: opts.type,
@@ -254,7 +254,7 @@ async function main() {
   });
 
   console.log(
-    `Seed concluído: 1 adega, 1 filial, ${userIds.length} usuários, ${products.length} produtos, ${movementCount} movimentações.`
+    `Seed concluído: 1 empresa, 1 filial, ${userIds.length} usuários, ${products.length} produtos, ${movementCount} movimentações.`
   );
 }
 

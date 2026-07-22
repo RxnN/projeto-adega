@@ -35,7 +35,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   }
 
   const promotion = await createPromotion({
-    adegaId: user.adegaId,
+    empresaId: user.empresaId,
     filialId,
     productId,
     promoPrice,

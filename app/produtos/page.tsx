@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { requireUser, canManageProducts } from "@/lib/auth";
-import { getAdegaById, listProducts, listPromotionsByFilial } from "@/lib/repo";
+import { getEmpresaById, listProducts, listPromotionsByFilial } from "@/lib/repo";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import ImportExportProducts from "@/components/ImportExportProducts";
 import { formatBRL } from "@/lib/format";
 import { hasActivePromotionInPeriod } from "@/lib/pricing";
+import PageHeader from "@/components/PageHeader";
 
 function stockStatus(p: { currentStock: number; minStockAlert: number | null }) {
   if (p.currentStock <= 0) return { label: "Zerado", pill: "pill-danger" };
@@ -15,13 +16,13 @@ function stockStatus(p: { currentStock: number; minStockAlert: number | null }) 
 export default async function ProdutosPage() {
   const user = await requireUser();
   const filialId = await getCurrentFilialId(user);
-  const [products, adega, promotions] = await Promise.all([
+  const [products, empresa, promotions] = await Promise.all([
     listProducts(filialId),
-    getAdegaById(user.adegaId),
+    getEmpresaById(user.empresaId),
     listPromotionsByFilial(filialId),
   ]);
   const canManage = canManageProducts(user.role);
-  const importEnabled = Boolean(adega?.importEnabled);
+  const importEnabled = Boolean(empresa?.importEnabled);
 
   const totalEstoqueCusto = products.reduce((sum, p) => sum + p.currentStock * p.costPrice, 0);
   const abaixoDoMinimo = products.filter(
@@ -30,15 +31,9 @@ export default async function ProdutosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Produtos</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>
-            {canManage
-              ? "Cadastro e edição de produtos do estoque."
-              : "Consulta de produtos cadastrados (somente leitura)."}
-          </p>
-        </div>
+      <PageHeader eyebrow="Controle de estoque" title="Produtos" description={canManage
+        ? "Consulte saldos, custos e preços ou gerencie o catálogo desta filial."
+        : "Consulte os produtos cadastrados e seus saldos atuais."} actions={
         <div className="flex flex-wrap items-start gap-2">
           <ImportExportProducts canImport={canManage} importEnabled={importEnabled} />
           {canManage && (
@@ -46,8 +41,7 @@ export default async function ProdutosPage() {
               + Novo produto
             </Link>
           )}
-        </div>
-      </div>
+        </div>} />
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="kpi">
@@ -60,8 +54,8 @@ export default async function ProdutosPage() {
         </div>
       </div>
 
-      <div className="card overflow-x-auto p-0">
-        <table className="min-w-full text-sm">
+      <div className="card data-card overflow-x-auto desktop-table">
+        <table className="data-table">
           <thead>
             <tr style={{ color: "var(--ink-soft)" }}>
               <th className="text-left px-4 py-2 font-semibold uppercase text-xs tracking-wide">Código</th>
@@ -124,6 +118,24 @@ export default async function ProdutosPage() {
             )}
           </tbody>
         </table>
+      </div>
+      <div className="mobile-list">
+        {products.map((p) => {
+          const status = stockStatus(p);
+          return (
+            <article key={p.id} className="mobile-record">
+              <div className="mobile-record-header">
+                <div><p className="font-semibold">{p.name}</p><p className="text-xs mt-1" style={{ color: "var(--ink-soft)" }}>{p.code} · {p.category}</p></div>
+                <span className={`pill ${status.pill}`}>{status.label}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs" style={{ color: "var(--ink-soft)" }}>Estoque</p><p className="font-semibold tabular mt-1">{p.currentStock} {p.unit}</p></div>
+                <div className="text-right"><p className="text-xs" style={{ color: "var(--ink-soft)" }}>Venda</p><p className="font-semibold tabular mt-1">{formatBRL(p.salePrice)}</p></div>
+              </div>
+              <div className="mobile-record-footer"><span className="text-xs" style={{ color: "var(--ink-soft)" }}>Custo {formatBRL(p.costPrice)}</span><Link href={`/produtos/${p.id}`} className="btn-secondary">Ver produto</Link></div>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

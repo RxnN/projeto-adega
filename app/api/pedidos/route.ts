@@ -62,7 +62,11 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     items.push({ productId: raw.productId, quantity: raw.quantity, unitValue, source: raw.source });
   }
 
-  if (type === "OUT" && !force) {
+  // Só o dono (OWNER) pode forçar o fechamento com estoque insuficiente (ex: correção
+  // manual de inventário) — Gerente e Funcionário nunca deixam o estoque ficar negativo,
+  // mesmo que enviem force=true diretamente pela API.
+  const canForceStock = user.role === "OWNER";
+  if (type === "OUT" && !(force && canForceStock)) {
     const insufficient = await checkPedidoStock(
       filialId,
       items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
@@ -71,10 +75,14 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
       const details = insufficient
         .map((i) => `${i.productName} (disponível: ${i.available} ${i.unit}, pedido: ${i.requested} ${i.unit})`)
         .join("; ");
+      const callToAction = canForceStock
+        ? "Confirme para fechar o pedido mesmo assim (estoque ficará negativo)."
+        : "Ajuste a quantidade ou peça para o dono liberar o fechamento com estoque negativo.";
       return NextResponse.json(
         {
-          warning: `Estoque insuficiente para: ${details}. Confirme para fechar o pedido mesmo assim (estoque ficará negativo).`,
+          warning: `Estoque insuficiente para: ${details}. ${callToAction}`,
           insufficient,
+          canForce: canForceStock,
         },
         { status: 409 }
       );
@@ -82,7 +90,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   }
 
   const pedido = await createPedido({
-    adegaId: user.adegaId,
+    empresaId: user.empresaId,
     filialId,
     type: type as MovementType,
     createdByUserId: user.userId,

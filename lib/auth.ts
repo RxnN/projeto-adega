@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, SessionData } from "./session";
-import { getAdegaById } from "./repo";
-import type { Adega, Role } from "./types";
+import { getEmpresaById } from "./repo";
+import type { Empresa, Role } from "./types";
 
 const EXPIRING_SOON_DAYS = 5;
 
 /** Verdadeiro quando a assinatura foi aprovada mas a data de vencimento já passou —
  * conta deve ser tratada como travada mesmo com approved = true. */
-export function isSubscriptionExpired(adega: Pick<Adega, "paidUntil">): boolean {
-  return Boolean(adega.paidUntil && new Date(adega.paidUntil) < new Date());
+export function isSubscriptionExpired(empresa: Pick<Empresa, "paidUntil">): boolean {
+  return Boolean(empresa.paidUntil && new Date(empresa.paidUntil) < new Date());
 }
 
 export interface SubscriptionStatus {
@@ -19,11 +19,11 @@ export interface SubscriptionStatus {
 
 /** Dias restantes até o vencimento (null = sem data de vencimento controlada) e se está
  * perto o suficiente pra avisar o dono (usado pelo banner no layout). */
-export function getSubscriptionStatus(adega: Pick<Adega, "paidUntil">): SubscriptionStatus {
-  if (!adega.paidUntil) {
+export function getSubscriptionStatus(empresa: Pick<Empresa, "paidUntil">): SubscriptionStatus {
+  if (!empresa.paidUntil) {
     return { expired: false, daysRemaining: null, expiringSoon: false };
   }
-  const msRemaining = new Date(adega.paidUntil).getTime() - Date.now();
+  const msRemaining = new Date(empresa.paidUntil).getTime() - Date.now();
   const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
   return {
     expired: daysRemaining < 0,
@@ -32,7 +32,7 @@ export function getSubscriptionStatus(adega: Pick<Adega, "paidUntil">): Subscrip
   };
 }
 
-/** Garante que existe um usuário logado e que a conta da adega já foi aprovada
+/** Garante que existe um usuário logado e que a conta da empresa já foi aprovada
  * (pagamento confirmado) e não está com a assinatura vencida; caso contrário
  * redireciona para login ou tela de espera. */
 export async function requireUser(): Promise<SessionData> {
@@ -40,8 +40,8 @@ export async function requireUser(): Promise<SessionData> {
   if (!user) {
     redirect("/");
   }
-  const adega = await getAdegaById((user as SessionData).adegaId);
-  if (!adega?.approved || isSubscriptionExpired(adega)) {
+  const empresa = await getEmpresaById((user as SessionData).empresaId);
+  if (!empresa?.approved || isSubscriptionExpired(empresa)) {
     redirect("/aguardando-aprovacao");
   }
   return user as SessionData;

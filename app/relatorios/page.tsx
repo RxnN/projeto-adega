@@ -12,6 +12,7 @@ import {
   type Periodo,
 } from "@/lib/reports";
 import RelatoriosTabs from "@/components/relatorios/RelatoriosTabs";
+import PageHeader from "@/components/PageHeader";
 
 export default async function RelatoriosPage({
   searchParams,
@@ -24,7 +25,7 @@ export default async function RelatoriosPage({
   // Gerente/funcionário estão sempre travados na própria filial (relatório nunca
   // mistura dados de outras filiais que essa pessoa não trabalha). Dono enxerga
   // "todas as filiais" por padrão (consolidado), com opção de filtrar por uma só.
-  const filiais = isOwner ? await listFiliais(user.adegaId) : [];
+  const filiais = isOwner ? await listFiliais(user.empresaId) : [];
   let filialId: string | undefined;
   if (isOwner) {
     const requested = filiais.find((f) => f.id === searchParams.filial);
@@ -38,24 +39,23 @@ export default async function RelatoriosPage({
   const { from, to } = resolvePeriodo(periodo, searchParams.from, searchParams.to);
 
   const [estoque, faturamento, faturamentoPorProduto, rentabilidade, sugestaoCompra, ranking] = await Promise.all([
-    getEstoqueAtual(user.adegaId, filialId),
-    getFaturamento(user.adegaId, from, to, filialId),
-    getFaturamentoPorProduto(user.adegaId, from, to, filialId),
-    isOwner ? getRentabilidade(user.adegaId, from, to, filialId) : Promise.resolve(null),
-    isOwner ? getSugestaoCompra(user.adegaId, filialId) : Promise.resolve(null),
-    isOwner ? getRankingRecorrencia(user.adegaId, from, to, filialId) : Promise.resolve(null),
+    getEstoqueAtual(user.empresaId, filialId),
+    getFaturamento(user.empresaId, from, to, filialId),
+    getFaturamentoPorProduto(user.empresaId, from, to, filialId),
+    isOwner ? getRentabilidade(user.empresaId, from, to, filialId) : Promise.resolve(null),
+    isOwner ? getSugestaoCompra(user.empresaId, filialId) : Promise.resolve(null),
+    isOwner ? getRankingRecorrencia(user.empresaId, from, to, filialId) : Promise.resolve(null),
   ]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Relatórios</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--ink-soft)" }}>
-          {isOwner
-            ? "Visão completa da adega: estoque, rentabilidade, faturamento, sugestão de compra e produtos mais recorrentes."
-            : "Visão gerencial: estoque atual e faturamento do mês corrente."}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Visão da operação"
+        title="Relatórios"
+        description={isOwner
+          ? "Acompanhe estoque, rentabilidade, faturamento, sugestão de compra e recorrência de produtos."
+          : "Acompanhe o estoque atual e o faturamento do mês corrente."}
+      />
 
       <RelatoriosTabs
         isOwner={isOwner}

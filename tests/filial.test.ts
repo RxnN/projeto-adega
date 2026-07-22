@@ -4,39 +4,39 @@ import { getEstoqueAtual, getFaturamento } from "@/lib/reports";
 import { seedFixture, seedProduct } from "./helpers";
 
 describe("createFilial / listFiliais", () => {
-  it("toda adega nasce com a filial criada no seedFixture", async () => {
-    const { adega, filial } = await seedFixture();
+  it("toda empresa nasce com a filial criada no seedFixture", async () => {
+    const { empresa, filial } = await seedFixture();
 
-    const filiais = await listFiliais(adega.id);
+    const filiais = await listFiliais(empresa.id);
 
     expect(filiais).toHaveLength(1);
     expect(filiais[0].id).toBe(filial.id);
   });
 
-  it("criar uma segunda filial soma à lista da mesma adega", async () => {
-    const { adega } = await seedFixture();
+  it("criar uma segunda filial soma à lista da mesma empresa", async () => {
+    const { empresa } = await seedFixture();
 
-    const segunda = await createFilial(adega.id, "Filial Centro");
-    const filiais = await listFiliais(adega.id);
+    const segunda = await createFilial(empresa.id, "Filial Centro");
+    const filiais = await listFiliais(empresa.id);
 
     expect(filiais).toHaveLength(2);
     expect(filiais.map((f) => f.name)).toContain("Filial Centro");
-    expect(segunda.adegaId).toBe(adega.id);
+    expect(segunda.empresaId).toBe(empresa.id);
   });
 
-  it("getFilialById não retorna filial de outra adega", async () => {
+  it("getFilialById não retorna filial de outra empresa", async () => {
     const { filial } = await seedFixture();
     const other = await seedFixture();
 
-    expect(await getFilialById(filial.id, other.adega.id)).toBeUndefined();
-    expect(await getFilialById(filial.id, filial.adegaId)).toBeDefined();
+    expect(await getFilialById(filial.id, other.empresa.id)).toBeUndefined();
+    expect(await getFilialById(filial.id, filial.empresaId)).toBeDefined();
   });
 });
 
-describe("isolamento de produtos entre filiais da mesma adega", () => {
+describe("isolamento de produtos entre filiais da mesma empresa", () => {
   it("produto cadastrado numa filial não aparece na outra", async () => {
-    const { adega, filial: filialA } = await seedFixture();
-    const filialB = await createFilial(adega.id, "Filial B");
+    const { empresa, filial: filialA } = await seedFixture();
+    const filialB = await createFilial(empresa.id, "Filial B");
 
     const productA = await seedProduct(filialA, { name: "Só na A" });
 
@@ -44,9 +44,9 @@ describe("isolamento de produtos entre filiais da mesma adega", () => {
     expect(await getProductById(productA.id, filialB.id)).toBeUndefined();
   });
 
-  it("cada filial numera produtos independentemente, mesmo dentro da mesma adega", async () => {
-    const { adega, filial: filialA } = await seedFixture();
-    const filialB = await createFilial(adega.id, "Filial B");
+  it("cada filial numera produtos independentemente, mesmo dentro da mesma empresa", async () => {
+    const { empresa, filial: filialA } = await seedFixture();
+    const filialB = await createFilial(empresa.id, "Filial B");
 
     const productA = await seedProduct(filialA);
     const productB = await seedProduct(filialB);
@@ -56,16 +56,16 @@ describe("isolamento de produtos entre filiais da mesma adega", () => {
   });
 });
 
-describe("relatórios: consolidado (toda a adega) vs filtrado por filial", () => {
+describe("relatórios: consolidado (toda a empresa) vs filtrado por filial", () => {
   it("getEstoqueAtual sem filialId soma produtos de todas as filiais; com filialId, só uma", async () => {
-    const { adega, filial: filialA } = await seedFixture();
-    const filialB = await createFilial(adega.id, "Filial B");
+    const { empresa, filial: filialA } = await seedFixture();
+    const filialB = await createFilial(empresa.id, "Filial B");
     await seedProduct(filialA, { name: "Produto A" });
     await seedProduct(filialB, { name: "Produto B" });
 
-    const consolidado = await getEstoqueAtual(adega.id);
-    const soFilialA = await getEstoqueAtual(adega.id, filialA.id);
-    const soFilialB = await getEstoqueAtual(adega.id, filialB.id);
+    const consolidado = await getEstoqueAtual(empresa.id);
+    const soFilialA = await getEstoqueAtual(empresa.id, filialA.id);
+    const soFilialB = await getEstoqueAtual(empresa.id, filialB.id);
 
     expect(consolidado).toHaveLength(2);
     expect(soFilialA).toHaveLength(1);
@@ -75,14 +75,14 @@ describe("relatórios: consolidado (toda a adega) vs filtrado por filial", () =>
   });
 
   it("getFaturamento consolida as duas filiais, mas isola quando filtrado", async () => {
-    const { adega, filial: filialA, user } = await seedFixture();
-    const filialB = await createFilial(adega.id, "Filial B");
+    const { empresa, filial: filialA, user } = await seedFixture();
+    const filialB = await createFilial(empresa.id, "Filial B");
     const productA = await seedProduct(filialA, { salePrice: 100, currentStock: 10 });
     const productB = await seedProduct(filialB, { salePrice: 200, currentStock: 10 });
     const { from, to } = { from: new Date("2000-01-01"), to: new Date("2100-01-01") };
 
     await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filialA.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -90,7 +90,7 @@ describe("relatórios: consolidado (toda a adega) vs filtrado por filial", () =>
       items: [{ productId: productA.id, quantity: 1, unitValue: 100, source: "MANUAL" }],
     });
     await createPedido({
-      adegaId: adega.id,
+      empresaId: empresa.id,
       filialId: filialB.id,
       type: "OUT",
       paymentMethod: "DINHEIRO",
@@ -98,9 +98,9 @@ describe("relatórios: consolidado (toda a adega) vs filtrado por filial", () =>
       items: [{ productId: productB.id, quantity: 1, unitValue: 200, source: "MANUAL" }],
     });
 
-    const consolidado = await getFaturamento(adega.id, from, to);
-    const soFilialA = await getFaturamento(adega.id, from, to, filialA.id);
-    const soFilialB = await getFaturamento(adega.id, from, to, filialB.id);
+    const consolidado = await getFaturamento(empresa.id, from, to);
+    const soFilialA = await getFaturamento(empresa.id, from, to, filialA.id);
+    const soFilialB = await getFaturamento(empresa.id, from, to, filialB.id);
 
     expect(consolidado.faturamento).toBe(300);
     expect(soFilialA.faturamento).toBe(100);

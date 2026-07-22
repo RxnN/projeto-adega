@@ -39,7 +39,10 @@ enum PaymentMethod {
   BOLETO
 }
 
-model Adega {
+/// Empresa/conta cliente (tenant). Nome físico da tabela preservado como "Adega"
+/// via @@map — estrutura do banco intocada, só a camada Prisma/TypeScript passou
+/// a chamar a entidade de Empresa.
+model Empresa {
   id             String     @id @default(cuid())
   name           String
   /// CNPJ (14 dígitos) ou CPF (11 dígitos) só com números — nullable pra não exigir
@@ -47,7 +50,7 @@ model Adega {
   /// lib/validation.ts).
   cnpjCpf        String?
   /// Importação em lote de produtos (planilha) é um recurso pago, liberado manualmente
-  /// por adega — não é auto-habilitado no cadastro self-service.
+  /// por empresa — não é auto-habilitado no cadastro self-service.
   importEnabled  Boolean    @default(false)
   /// Conta fica travada (sem acesso ao app) até o pagamento ser confirmado e a conta
   /// ser aprovada manualmente. Cadastro self-service sempre nasce com approved = false.
@@ -57,7 +60,7 @@ model Adega {
   /// re-travado automaticamente (ver requireUser em lib/auth.ts) até renovar.
   paidUntil      DateTime?
   /// Quantas filiais essa conta pode ter — licenciado manualmente por você (ver
-  /// scripts/set-max-filiais.ts), não um recurso auto-serviço. Toda adega já nasce
+  /// scripts/set-max-filiais.ts), não um recurso auto-serviço. Toda empresa já nasce
   /// com 1 (a matriz criada no cadastro/migração).
   maxFiliais     Int        @default(1)
   createdAt      DateTime   @default(now())
@@ -67,15 +70,17 @@ model Adega {
   pedidos        Pedido[]
   filiais        Filial[]
   promotions     Promotion[]
+
+  @@map("Adega")
 }
 
-/// Local físico dentro de uma Adega (empresa/conta). Uma adega sempre tem pelo menos
+/// Local físico dentro de uma Empresa (conta). Uma empresa sempre tem pelo menos
 /// 1 filial (a "matriz" criada automaticamente na migração/cadastro); redes com mais
 /// de um estabelecimento cadastram filiais adicionais em /filiais.
 model Filial {
   id        String     @id @default(cuid())
-  adegaId   String
-  adega     Adega      @relation(fields: [adegaId], references: [id])
+  empresaId String     @map("adegaId")
+  empresa   Empresa    @relation(fields: [empresaId], references: [id])
   name      String
   createdAt DateTime   @default(now())
   users     User[]
@@ -85,7 +90,7 @@ model Filial {
   counters  Counter[]
   promotions Promotion[]
 
-  @@index([adegaId])
+  @@index([empresaId])
 }
 
 /// Contador atômico por filial (código de produto, número de pedido por tipo, etc).
@@ -102,9 +107,9 @@ model Counter {
 
 model User {
   id           String     @id @default(cuid())
-  adegaId      String
-  adega        Adega      @relation(fields: [adegaId], references: [id])
-  /// Null = OWNER (enxerga/administra todas as filiais da adega). MANAGER e EMPLOYEE
+  empresaId    String     @map("adegaId")
+  empresa      Empresa    @relation(fields: [empresaId], references: [id])
+  /// Null = OWNER (enxerga/administra todas as filiais da empresa). MANAGER e EMPLOYEE
   /// são sempre escopados a uma filial específica (regra validada na aplicação).
   filialId     String?
   filial       Filial?    @relation(fields: [filialId], references: [id])
@@ -124,9 +129,9 @@ model User {
 
 model Product {
   id            String     @id @default(cuid())
-  adegaId       String
-  adega         Adega      @relation(fields: [adegaId], references: [id])
-  /// Cada filial tem seu próprio catálogo/estoque — adegaId fica denormalizado aqui
+  empresaId     String     @map("adegaId")
+  empresa       Empresa    @relation(fields: [empresaId], references: [id])
+  /// Cada filial tem seu próprio catálogo/estoque — empresaId fica denormalizado aqui
   /// só pra permitir relatório consolidado da empresa sem precisar de join.
   filialId      String
   filial        Filial     @relation(fields: [filialId], references: [id])
@@ -152,7 +157,7 @@ model Product {
   movements     Movement[]
   promotions    Promotion[]
 
-  @@index([adegaId])
+  @@index([empresaId])
   @@index([filialId])
   @@unique([filialId, code])
   @@unique([filialId, barcode])
@@ -165,8 +170,8 @@ model Product {
 /// preço normal" acontece sozinho quando a condição deixa de valer, sem precisar de job.
 model Promotion {
   id              String    @id @default(cuid())
-  adegaId         String
-  adega           Adega     @relation(fields: [adegaId], references: [id])
+  empresaId       String    @map("adegaId")
+  empresa         Empresa   @relation(fields: [empresaId], references: [id])
   filialId        String
   filial          Filial    @relation(fields: [filialId], references: [id])
   productId       String
@@ -182,15 +187,15 @@ model Promotion {
   createdByUserId String
   createdByUser   User      @relation(fields: [createdByUserId], references: [id])
 
-  @@index([adegaId])
+  @@index([empresaId])
   @@index([filialId])
   @@index([productId])
 }
 
 model Pedido {
   id              String       @id @default(cuid())
-  adegaId         String
-  adega           Adega        @relation(fields: [adegaId], references: [id])
+  empresaId       String       @map("adegaId")
+  empresa         Empresa      @relation(fields: [empresaId], references: [id])
   filialId        String
   filial          Filial       @relation(fields: [filialId], references: [id])
   type            MovementType @default(OUT)
@@ -208,16 +213,16 @@ model Pedido {
   boletoDueDays   Int?
   items           Movement[]
 
-  @@index([adegaId])
-  @@index([adegaId, type, createdAt])
+  @@index([empresaId])
+  @@index([empresaId, type, createdAt])
   @@index([filialId, type, createdAt])
   @@unique([filialId, type, number])
 }
 
 model Movement {
   id              String         @id @default(cuid())
-  adegaId         String
-  adega           Adega          @relation(fields: [adegaId], references: [id])
+  empresaId       String         @map("adegaId")
+  empresa         Empresa        @relation(fields: [empresaId], references: [id])
   filialId        String
   filial          Filial         @relation(fields: [filialId], references: [id])
   productId       String
@@ -233,10 +238,10 @@ model Movement {
   pedidoId        String?
   pedido          Pedido?        @relation(fields: [pedidoId], references: [id])
 
-  @@index([adegaId])
+  @@index([empresaId])
   @@index([filialId])
   @@index([productId])
   @@index([createdAt])
   @@index([pedidoId])
-  @@index([adegaId, type, createdAt])
+  @@index([empresaId, type, createdAt])
 }

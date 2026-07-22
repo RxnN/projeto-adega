@@ -11,10 +11,10 @@ flowchart TD
     Start([Usuário acessa o app]) --> HasSession{Sessão válida?}
 
     HasSession -- Não --> Login["/  (Login)"]
-    HasSession -- Sim --> CheckApproval{Adega aprovada<br/>e assinatura em dia?}
+    HasSession -- Sim --> CheckApproval{Empresa aprovada<br/>e assinatura em dia?}
 
     Login -- credenciais corretas --> CheckApproval
-    Login -- "Cadastre sua Adega" --> Cadastro["/cadastro"]
+    Login -- "Cadastre sua empresa" --> Cadastro["/cadastro"]
     Cadastro -- cadastro enviado --> Aguardando["/aguardando-aprovacao"]
 
     CheckApproval -- Não --> Aguardando
@@ -65,7 +65,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    RootLayout["app/layout.tsx<br/>(busca user/adega/filiais/assinatura)"] --> AppShell["AppShell.tsx<br/>(decide mostrar ou não o menu)"]
+    RootLayout["app/layout.tsx<br/>(busca user/empresa/filiais/assinatura)"] --> AppShell["AppShell.tsx<br/>(decide mostrar ou não o menu)"]
 
     AppShell -->|rota pública: / ou /cadastro| Bare["&lt;main&gt;{children}&lt;/main&gt; sem menu"]
     AppShell -->|rota autenticada| Shell["NavBar + SubscriptionBanner + &lt;main&gt;"]

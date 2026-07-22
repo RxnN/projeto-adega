@@ -28,7 +28,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   }
   const filialId = await getCurrentFilialId(user);
   const product = await createProduct({
-    adegaId: user.adegaId,
+    empresaId: user.empresaId,
     filialId,
     ...data,
     barcode: null,

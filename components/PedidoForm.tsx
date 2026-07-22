@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MovementType, PackageType, PaymentMethod, Product, Promotion, Role } from "@/lib/types";
 import { formatBRL } from "@/lib/format";
 import { getEffectivePrice } from "@/lib/pricing";
 import ProductAutocomplete from "./ProductAutocomplete";
 import NFeImport from "./NFeImport";
+import PedidoCartTable, { type CartRowView } from "./PedidoCartTable";
+import PaymentDialog from "./PaymentDialog";
 
 const PACKAGE_LABEL: Record<PackageType, string> = { CX: "Caixa", PCT: "Pacote" };
 
@@ -75,6 +77,9 @@ export default function PedidoForm({
   // Funcionário vende sempre pelo preço de tabela (ou promocional, se houver); só
   // dono/gerente pode negociar um preço diferente disso.
   const canEditPrice = isEntrada || userRole !== "EMPLOYEE";
+  // Só o dono pode forçar o fechamento de um pedido de saída com estoque insuficiente
+  // (deixando o estoque negativo de propósito) — Gerente e Funcionário nunca podem.
+  const canForceStock = userRole === "OWNER";
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const promotionsByProduct = useMemo(() => {
@@ -98,8 +103,28 @@ export default function PedidoForm({
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
   const [boletoDueDays, setBoletoDueDays] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const total = useMemo(() => cart.reduce((sum, item) => sum + baseQuantity(item) * item.unitValue, 0), [cart]);
+
+  const rows: CartRowView[] = useMemo(
+    () =>
+      cart.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        category: item.category,
+        packageType: item.packageType,
+        unitsPerPackage: item.unitsPerPackage,
+        mode: item.mode,
+        displayQty: item.displayQty,
+        unitValue: item.unitValue,
+        baseQty: baseQuantity(item),
+        subtotal: baseQuantity(item) * item.unitValue,
+        isPromo: !isEntrada && item.unitValue < item.basePrice,
+      })),
+    [cart, isEntrada]
+  );
 
   function resetMessages() {
     setError(null);
@@ -259,6 +284,8 @@ export default function PedidoForm({
       setCart([]);
       setPaymentMethod("");
       setBoletoDueDays("");
+      setDialogOpen(false);
+      closeButtonRef.current?.focus();
       router.refresh();
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -267,8 +294,9 @@ export default function PedidoForm({
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  /** Só valida o que não depende da forma de pagamento; se passar, abre o Dialog
+   * onde o pagamento é escolhido e confirmado. */
+  function openPaymentDialog() {
     if (cart.length === 0) {
       setError("Adicione ao menos um produto ao pedido.");
       return;
@@ -277,6 +305,20 @@ export default function PedidoForm({
       setError("Informe uma quantidade válida para todos os itens.");
       return;
     }
+    setDialogOpen(true);
+  }
+
+  function closeDialog() {
+    setDialogOpen(false);
+    setError(null);
+    setWarning(null);
+    setInsufficient([]);
+    closeButtonRef.current?.focus();
+  }
+
+  /** Mesma validação que antes vivia no submit do formulário, agora disparada pelo
+   * botão "Confirmar Pedido" dentro do PaymentDialog. */
+  function confirmPayment() {
     if (!paymentMethod) {
       setError("Selecione a forma de pagamento.");
       return;
@@ -289,171 +331,79 @@ export default function PedidoForm({
   }
 
   return (
-    <div className="grid lg:grid-cols-[1.15fr_.85fr] gap-5 items-start">
-      <div className="space-y-5">
-        {isEntrada && <NFeImport products={products} onImport={handleNFeImport} />}
+    <div className="space-y-6">
+      {isEntrada && <NFeImport products={products} onImport={handleNFeImport} />}
 
-        <div className="panel space-y-3">
-          <label className="label">Adicionar produto ao pedido de {isEntrada ? "entrada" : "saída"}</label>
-          <ProductAutocomplete products={products} onSelect={(p) => addToCart(p)} autoFocus />
-        </div>
+      <div className="panel space-y-2 order-search-panel">
+        <label className="label">Adicionar produto ao pedido de {isEntrada ? "entrada" : "saída"}</label>
+        <ProductAutocomplete products={products} onSelect={(p) => addToCart(p)} autoFocus />
       </div>
 
-      <div className="panel flex flex-col lg:sticky lg:top-6">
-        <h2 className="font-display font-bold text-sm uppercase tracking-wide mb-3" style={{ color: "var(--ink-soft)" }}>
-          Pedido de {isEntrada ? "entrada" : "saída"}
-        </h2>
+      <PedidoCartTable
+        rows={rows}
+        canEditPrice={canEditPrice}
+        emptyMessage={`Nenhum produto no pedido de ${isEntrada ? "entrada" : "saída"} ainda. Adicione produtos na busca acima.`}
+        onQuantityChange={handleQuantityInput}
+        onModeChange={updateMode}
+        onUnitValueChange={updateUnitValue}
+        onRemove={removeItem}
+      />
 
-        {cart.length === 0 ? (
-          <p className="text-sm py-6 text-center" style={{ color: "var(--ink-soft)" }}>
-            Nenhum produto no pedido de {isEntrada ? "entrada" : "saída"} ainda. Adicione produtos ao lado.
-          </p>
-        ) : (
-          <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
-            {cart.map((item) => (
-              <li key={item.productId} className="py-3 first:pt-0 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm truncate">{item.name}</p>
-                    <p className="text-xs truncate" style={{ color: "var(--ink-soft)" }}>
-                      {item.category}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.productId)}
-                    className="text-xs shrink-0 font-medium"
-                    style={{ color: "var(--danger)" }}
-                  >
-                    Remover
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {item.packageType && (
-                    <select
-                      className="input text-xs w-24 py-1.5"
-                      value={item.mode}
-                      onChange={(e) => updateMode(item.productId, e.target.value as "UNIT" | "PACKAGE")}
-                    >
-                      <option value="UNIT">UNID</option>
-                      <option value="PACKAGE">
-                        {item.packageType} ({item.unitsPerPackage} un)
-                      </option>
-                    </select>
-                  )}
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="input text-right w-16 py-1.5 tabular"
-                    value={item.displayQty === 0 ? "" : item.displayQty}
-                    onChange={(e) => handleQuantityInput(item.productId, e.target.value)}
-                  />
-                  <span className="text-xs" style={{ color: "var(--ink-soft)" }}>
-                    ×
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    disabled={!canEditPrice}
-                    title={canEditPrice ? undefined : "Só dono ou gerente pode alterar o preço de venda"}
-                    className="input text-right w-20 py-1.5 tabular disabled:opacity-60"
-                    value={item.unitValue}
-                    onChange={(e) => updateUnitValue(item.productId, Number(e.target.value))}
-                  />
-                  <span className="ml-auto font-semibold text-sm tabular">
-                    {formatBRL(baseQuantity(item) * item.unitValue)}
-                  </span>
-                </div>
-                {item.mode === "PACKAGE" && item.unitsPerPackage && (
-                  <p className="text-xs" style={{ color: "var(--ink-soft)" }}>
-                    = {baseQuantity(item)} un
-                  </p>
-                )}
-                {!isEntrada && item.unitValue < item.basePrice && (
-                  <p className="text-xs font-semibold" style={{ color: "var(--ok)" }}>
-                    🏷 preço promocional aplicado
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="flex items-baseline justify-between border-t pt-3 mt-3" style={{ borderColor: "var(--ink)" }}>
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--ink-soft)" }}>
-            Total
-          </span>
-          <span className="font-display font-extrabold text-2xl tabular">{formatBRL(total)}</span>
-        </div>
-
-        <div className="space-y-2 mt-3">
-          <label className="label">{isEntrada ? "Forma de pagamento da NF-e" : "Forma de pagamento"}</label>
-          <select
-            className="input"
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod | "")}
-          >
-            <option value="">Selecione...</option>
-            {PAYMENT_OPTIONS[type].map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          {isEntrada && paymentMethod === "BOLETO" && (
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className="input"
-              placeholder="Vencimento em quantos dias (ex: 30)"
-              value={boletoDueDays}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === "" || /^\d+$/.test(raw)) setBoletoDueDays(raw);
-              }}
-            />
-          )}
-        </div>
-
-        {error && (
-          <p className="text-sm mt-3" style={{ color: "var(--danger)" }}>
-            {error}
-          </p>
-        )}
-        {success && (
-          <p className="text-sm mt-3" style={{ color: "var(--ok)" }}>
-            {success}
-          </p>
-        )}
-        {warning && (
-          <div className="rounded-lg p-3 space-y-2 mt-3" style={{ backgroundColor: "var(--warn-soft)" }}>
-            <p className="text-sm" style={{ color: "var(--warn)" }}>
-              {warning}
-            </p>
-            {insufficient.length > 0 && (
-              <ul className="text-xs list-disc list-inside" style={{ color: "var(--warn)" }}>
-                {insufficient.map((i) => (
-                  <li key={i.productId}>
-                    {i.productName}: disponível {i.available} {i.unit}, pedido {i.requested} {i.unit}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button type="button" onClick={() => closePedido(true)} className="btn-danger" disabled={loading}>
-              Confirmar mesmo assim
-            </button>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <button type="submit" disabled={loading || cart.length === 0} className="btn-primary w-full mt-4">
-            {loading ? "Fechando pedido..." : `Fechar pedido de ${isEntrada ? "entrada" : "saída"}`}
-          </button>
-        </form>
+      <div className="order-total-bar">
+        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--ink-soft)" }}>
+          Total
+        </span>
+        <span className="font-display font-extrabold text-3xl tabular" style={{ color: "var(--accent)" }}>
+          {formatBRL(total)}
+        </span>
       </div>
+
+      {!dialogOpen && error && (
+        <p className="text-sm" style={{ color: "var(--danger)" }}>
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className="text-sm" style={{ color: "var(--ok)" }}>
+          {success}
+        </p>
+      )}
+
+      <button
+        ref={closeButtonRef}
+        type="button"
+        onClick={openPaymentDialog}
+        disabled={cart.length === 0}
+        className="btn-primary w-full text-base order-submit transition-transform active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={
+          {
+            paddingTop: "0.875rem",
+            paddingBottom: "0.875rem",
+            "--tw-ring-color": "var(--accent)",
+            "--tw-ring-offset-color": "var(--surface)",
+          } as React.CSSProperties
+        }
+      >
+        {`Fechar pedido de ${isEntrada ? "entrada" : "saída"}`}
+      </button>
+
+      <PaymentDialog
+        open={dialogOpen}
+        isEntrada={isEntrada}
+        options={PAYMENT_OPTIONS[type]}
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={setPaymentMethod}
+        boletoDueDays={boletoDueDays}
+        onBoletoDueDaysChange={setBoletoDueDays}
+        error={error}
+        warning={warning}
+        insufficient={insufficient}
+        canForceStock={canForceStock}
+        loading={loading}
+        onCancel={closeDialog}
+        onConfirm={confirmPayment}
+        onForceConfirm={() => closePedido(true)}
+      />
     </div>
   );
 }
