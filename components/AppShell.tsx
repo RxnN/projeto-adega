@@ -34,7 +34,7 @@ export default function AppShell({
   return (
     <div className="app-shell">
       <NavBar user={user} filiais={filiais} currentFilialId={currentFilialId} />
-      <div className="app-content">
+      <div className="app-content branded-watermark">
         {subscriptionStatus?.expiringSoon && subscriptionStatus.daysRemaining !== null && (
           <SubscriptionBanner daysRemaining={subscriptionStatus.daysRemaining} />
         )}

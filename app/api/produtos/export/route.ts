@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { getCurrentUser } from "@/lib/session";
-import { listProducts } from "@/lib/repo";
+import { canManageProducts } from "@/lib/auth";
+import { getEmpresaById, listProducts } from "@/lib/repo";
 import { withErrorHandling } from "@/lib/api-handler";
 import { getCurrentFilialId } from "@/lib/filial-context";
 
 export const GET = withErrorHandling(async (_req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  if (!canManageProducts(user.role)) {
+    return NextResponse.json({ error: "Você não tem permissão para exportar produtos." }, { status: 403 });
+  }
+
+  const empresa = await getEmpresaById(user.empresaId);
+  if (!empresa?.importEnabled) {
+    return NextResponse.json(
+      { error: "Exportação de planilha não está habilitada para sua empresa. Fale com a gente para habilitar." },
+      { status: 403 }
+    );
+  }
 
   const filialId = await getCurrentFilialId(user);
   const products = await listProducts(filialId);

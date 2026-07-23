@@ -52,11 +52,11 @@ export default function ImportExportProducts({
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex gap-2">
-        <a href="/api/produtos/export" className="btn-secondary">
-          Exportar planilha
-        </a>
         {canImport && importEnabled && (
           <>
+            <a href="/api/produtos/export" className="btn-secondary">
+              Exportar planilha
+            </a>
             <button
               type="button"
               className="btn-secondary"

@@ -15,7 +15,7 @@ export default async function PedidosPage() {
   ]);
   return (
     <div className="space-y-8">
-      <PageHeader eyebrow="Operação de venda" title="Pedidos" description="Monte pedidos de venda com múltiplos produtos e feche tudo de uma vez." />
+      <PageHeader eyebrow="Operação de venda" title="Pedidos" description="Busque os produtos, adicione ao pedido e feche a venda." />
       <PedidoForm products={products} type="OUT" userRole={user.role} promotions={promotions} />
       <section className="space-y-4 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
         <div className="section-heading"><h2>Últimos pedidos</h2></div>
