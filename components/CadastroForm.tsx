@@ -41,7 +41,7 @@ export default function CadastroForm() {
 
       // Navegação completa — mesmo motivo do LoginForm: evita reaproveitar cache de rota
       // de uma sessão anterior (ex: testar como funcionário logo depois de estar como dono).
-      window.location.href = "/pedidos";
+      window.location.href = "/inicio";
     } catch {
       setError("Erro de conexão. Tente novamente.");
       setLoading(false);

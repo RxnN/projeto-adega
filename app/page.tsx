@@ -7,7 +7,7 @@ import Image from "next/image";
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
-    redirect("/pedidos");
+    redirect("/inicio");
   }
 
   return (
@@ -44,12 +44,9 @@ export default async function LoginPage() {
           </div>
         </div>
 
-        <div className="card mt-4 text-xs space-y-1" style={{ color: "var(--ink-soft)" }}>
-          <p className="font-semibold">Credenciais de demonstração (senha: senha123)</p>
-          <p>Dono: dono@empresaexemplo.com</p>
-          <p>Gerente: gerente@empresaexemplo.com</p>
-          <p>Funcionário: funcionario@empresaexemplo.com</p>
-        </div>
+        <p className="text-center text-xs mt-4" style={{ color: "var(--ink-soft)" }}>
+          Seus dados ficam protegidos e isolados por empresa.
+        </p>
       </div>
     </div>
   );

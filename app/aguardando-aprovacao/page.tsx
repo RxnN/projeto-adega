@@ -9,7 +9,7 @@ export default async function AguardandoAprovacaoPage() {
 
   const empresa = await getEmpresaById(user.empresaId);
   const expired = empresa ? isSubscriptionExpired(empresa) : false;
-  if (empresa?.approved && !expired) redirect("/pedidos");
+  if (empresa?.approved && !expired) redirect("/inicio");
 
   return (
     <div className="max-w-md mx-auto text-center py-20">

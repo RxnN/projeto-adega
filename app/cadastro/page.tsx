@@ -6,7 +6,7 @@ import Image from "next/image";
 export default async function CadastroPage() {
   const user = await getCurrentUser();
   if (user) {
-    redirect("/pedidos");
+    redirect("/inicio");
   }
 
   return (

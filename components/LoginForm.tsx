@@ -27,7 +27,7 @@ export default function LoginForm() {
       // Navegação completa — garante que toda a árvore (layout + página) renderize do
       // zero pra sessão nova, sem reaproveitar cache de rota de uma conta anterior
       // (ex: papel/preços de um dono aparecendo depois de logar como funcionário).
-      window.location.href = "/pedidos";
+      window.location.href = "/inicio";
     } catch {
       setError("Erro de conexão. Tente novamente.");
       setLoading(false);

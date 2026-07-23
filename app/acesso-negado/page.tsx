@@ -7,8 +7,8 @@ export default function AcessoNegadoPage() {
       <p className="mb-6" style={{ color: "var(--ink-soft)" }}>
         Seu perfil de usuário não tem permissão para acessar esta página.
       </p>
-      <Link href="/pedidos" className="btn-primary">
-        Voltar para Pedidos
+      <Link href="/inicio" className="btn-primary">
+        Voltar ao início
       </Link>
     </div>
   );

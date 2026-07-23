@@ -16,6 +16,9 @@ const roleLabel: Record<string, string> = {
 };
 
 const ICONS: Record<string, React.ReactNode> = {
+  "/inicio": (
+    <path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6" strokeLinecap="round" strokeLinejoin="round" />
+  ),
   "/pedidos": (
     <path d="M3 4h2l1.6 9.6a2 2 0 0 0 2 1.7h7.1a2 2 0 0 0 2-1.6L19 8H6" strokeLinecap="round" strokeLinejoin="round" />
   ),
@@ -69,6 +72,7 @@ export default function NavBar({
   }, [pathname]);
 
   const links = [
+    { href: "/inicio", label: "Início" },
     { href: "/pedidos", label: "Pedidos" },
     { href: "/entrada", label: "Entrada" },
     { href: "/movimentacao", label: "Movimentações" },
