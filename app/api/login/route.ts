@@ -54,6 +54,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     name: user.name,
     email: user.email,
     role: user.role,
+    lastActivityAt: Date.now(),
   };
   await session.save();
 

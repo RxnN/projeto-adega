@@ -29,7 +29,7 @@ async function loginAs(
   email: string,
   role: "OWNER" | "MANAGER" | "EMPLOYEE"
 ) {
-  vi.mocked(getCurrentUser).mockResolvedValue({ userId, empresaId, empresaName, filialId, name, email, role });
+  vi.mocked(getCurrentUser).mockResolvedValue({ userId, empresaId, empresaName, filialId, name, email, role, lastActivityAt: Date.now() });
 }
 
 describe("POST /api/filiais", () => {
