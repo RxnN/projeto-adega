@@ -336,7 +336,7 @@ export default function PedidoForm({
 
       <div className="panel space-y-2 order-search-panel">
         <label className="label">Adicionar produto ao pedido de {isEntrada ? "entrada" : "saída"}</label>
-        <ProductAutocomplete products={products} onSelect={(p) => addToCart(p)} autoFocus />
+        <ProductAutocomplete products={products} onSelect={(p) => addToCart(p)} />
       </div>
 
       <PedidoCartTable
