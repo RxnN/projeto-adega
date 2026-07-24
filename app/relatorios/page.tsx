@@ -1,4 +1,4 @@
-import { requireRole, canAccessReportsFull } from "@/lib/auth";
+import { getEffectivePermissions, requirePermission } from "@/lib/auth";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import { listFiliais } from "@/lib/repo";
 import {
@@ -19,15 +19,17 @@ export default async function RelatoriosPage({
 }: {
   searchParams: { periodo?: string; from?: string; to?: string; filial?: string };
 }) {
-  const user = await requireRole(["OWNER", "MANAGER"]);
-  const isOwner = canAccessReportsFull(user.role);
+  const user = await requirePermission("VIEW_REPORTS");
+  const permissions = await getEffectivePermissions(user);
+  const canChooseBranch = user.role === "OWNER";
+  const canViewAdvanced = permissions.VIEW_COSTS_MARGIN;
 
   // Gerente/funcionário estão sempre travados na própria filial (relatório nunca
   // mistura dados de outras filiais que essa pessoa não trabalha). Dono enxerga
   // "todas as filiais" por padrão (consolidado), com opção de filtrar por uma só.
-  const filiais = isOwner ? await listFiliais(user.empresaId) : [];
+  const filiais = canChooseBranch ? await listFiliais(user.empresaId) : [];
   let filialId: string | undefined;
-  if (isOwner) {
+  if (canChooseBranch) {
     const requested = filiais.find((f) => f.id === searchParams.filial);
     filialId = requested?.id;
   } else {
@@ -35,30 +37,38 @@ export default async function RelatoriosPage({
   }
 
   // Gerente só pode ver o mês corrente; dono pode escolher qualquer período.
-  const periodo: Periodo = isOwner ? ((searchParams.periodo as Periodo) || "mes") : "mes";
+  const periodo: Periodo = canViewAdvanced ? ((searchParams.periodo as Periodo) || "mes") : "mes";
   const { from, to } = resolvePeriodo(periodo, searchParams.from, searchParams.to);
 
-  const [estoque, faturamento, faturamentoPorProduto, rentabilidade, sugestaoCompra, ranking] = await Promise.all([
+  const [estoqueRaw, faturamento, faturamentoPorProduto, rentabilidade, sugestaoCompra, ranking] = await Promise.all([
     getEstoqueAtual(user.empresaId, filialId),
     getFaturamento(user.empresaId, from, to, filialId),
     getFaturamentoPorProduto(user.empresaId, from, to, filialId),
-    isOwner ? getRentabilidade(user.empresaId, from, to, filialId) : Promise.resolve(null),
-    isOwner ? getSugestaoCompra(user.empresaId, filialId) : Promise.resolve(null),
-    isOwner ? getRankingRecorrencia(user.empresaId, from, to, filialId) : Promise.resolve(null),
+    canViewAdvanced ? getRentabilidade(user.empresaId, from, to, filialId) : Promise.resolve(null),
+    canViewAdvanced ? getSugestaoCompra(user.empresaId, filialId) : Promise.resolve(null),
+    canViewAdvanced ? getRankingRecorrencia(user.empresaId, from, to, filialId) : Promise.resolve(null),
   ]);
+
+  // RelatoriosTabs é Client Component: qualquer campo aqui atravessa para o payload do
+  // navegador mesmo que a UI não renderize a coluna. Sem VIEW_COSTS_MARGIN, zera o custo
+  // antes de sair do servidor em vez de só esconder a coluna.
+  const estoque = canViewAdvanced
+    ? estoqueRaw
+    : estoqueRaw.map((item) => ({ ...item, costPrice: 0, valorEmEstoque: 0 }));
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Visão da operação"
         title="Relatórios"
-        description={isOwner
+        description={canViewAdvanced
           ? "Acompanhe estoque, rentabilidade, faturamento, sugestão de compra e recorrência de produtos."
           : "Acompanhe o estoque atual e o faturamento do mês corrente."}
       />
 
       <RelatoriosTabs
-        isOwner={isOwner}
+        canViewAdvanced={canViewAdvanced}
+        canChooseBranch={canChooseBranch}
         filiais={filiais}
         filialId={filialId}
         estoque={estoque}

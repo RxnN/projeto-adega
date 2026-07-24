@@ -120,6 +120,10 @@ model User {
   email        String     @unique
   passwordHash String
   role         Role
+  /// Exceções ao perfil-base, definidas pelo Dono. Null = usa integralmente o padrão
+  /// do papel (OWNER/MANAGER/EMPLOYEE). O objeto guarda somente chaves booleanas
+  /// conhecidas pela aplicação, permitindo evoluir os padrões sem migrar cada usuário.
+  permissions  Json?
   createdAt    DateTime   @default(now())
   movements    Movement[] @relation("MovementCreatedBy")
   pedidos      Pedido[]   @relation("PedidoCreatedBy")

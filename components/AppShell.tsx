@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import type { SessionData } from "@/lib/session";
-import type { Filial } from "@/lib/types";
+import type { EffectivePermissions, Filial } from "@/lib/types";
 import type { SubscriptionStatus } from "@/lib/auth";
 import NavBar from "./NavBar";
 import SubscriptionBanner from "./SubscriptionBanner";
@@ -16,12 +16,14 @@ export default function AppShell({
   filiais,
   currentFilialId,
   subscriptionStatus,
+  permissions,
   children,
 }: {
   user: SessionData | null;
   filiais: Filial[];
   currentFilialId: string | null;
   subscriptionStatus: SubscriptionStatus | null;
+  permissions: EffectivePermissions | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -33,7 +35,7 @@ export default function AppShell({
 
   return (
     <div className="app-shell">
-      <NavBar user={user} filiais={filiais} currentFilialId={currentFilialId} />
+      <NavBar user={user} filiais={filiais} currentFilialId={currentFilialId} permissions={permissions} />
       <div className="app-content branded-watermark">
         {subscriptionStatus?.expiringSoon && subscriptionStatus.daysRemaining !== null && (
           <SubscriptionBanner daysRemaining={subscriptionStatus.daysRemaining} />

@@ -1,8 +1,8 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import ProductForm from "@/components/ProductForm";
 
 export default async function NovoProdutoPage() {
-  await requireRole(["OWNER"]);
+  await requirePermission("MANAGE_PRODUCTS");
 
   return (
     <div className="space-y-6">

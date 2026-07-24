@@ -1,7 +1,7 @@
 import type { EstoqueItem } from "@/lib/reports";
 import { formatBRL } from "@/lib/format";
 
-export default function EstoqueAtualTable({ items }: { items: EstoqueItem[] }) {
+export default function EstoqueAtualTable({ items, canViewCosts }: { items: EstoqueItem[]; canViewCosts: boolean }) {
   const totalValor = items.reduce((acc, i) => acc + i.valorEmEstoque, 0);
 
   return (
@@ -12,7 +12,9 @@ export default function EstoqueAtualTable({ items }: { items: EstoqueItem[] }) {
             <th className="text-left px-4 py-2 font-semibold uppercase text-xs tracking-wide">Produto</th>
             <th className="text-left px-4 py-2 font-semibold uppercase text-xs tracking-wide">Categoria</th>
             <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Quantidade</th>
-            <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Valor em estoque (custo)</th>
+            {canViewCosts && (
+              <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Valor em estoque (custo)</th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y" style={{ borderColor: "var(--border)" }}>
@@ -27,18 +29,20 @@ export default function EstoqueAtualTable({ items }: { items: EstoqueItem[] }) {
                   {i.currentStock} {i.unit}
                 </span>
               </td>
-              <td className="px-4 py-2 text-right tabular">{formatBRL(i.valorEmEstoque)}</td>
+              {canViewCosts && <td className="px-4 py-2 text-right tabular">{formatBRL(i.valorEmEstoque)}</td>}
             </tr>
           ))}
         </tbody>
-        <tfoot>
-          <tr className="font-semibold" style={{ backgroundColor: "var(--surface-2)" }}>
-            <td className="px-4 py-2" colSpan={3}>
-              Total em estoque (valor de custo)
-            </td>
-            <td className="px-4 py-2 text-right tabular">{formatBRL(totalValor)}</td>
-          </tr>
-        </tfoot>
+        {canViewCosts && (
+          <tfoot>
+            <tr className="font-semibold" style={{ backgroundColor: "var(--surface-2)" }}>
+              <td className="px-4 py-2" colSpan={3}>
+                Total em estoque (valor de custo)
+              </td>
+              <td className="px-4 py-2 text-right tabular">{formatBRL(totalValor)}</td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );

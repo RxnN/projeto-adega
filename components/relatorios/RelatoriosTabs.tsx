@@ -13,7 +13,8 @@ import FilialFilter from "./FilialFilter";
 type TabKey = "estoque" | "rentabilidade" | "faturamento" | "sugestao" | "recorrencia";
 
 export default function RelatoriosTabs({
-  isOwner,
+  canViewAdvanced,
+  canChooseBranch,
   filiais,
   filialId,
   estoque,
@@ -28,7 +29,8 @@ export default function RelatoriosTabs({
   searchFrom,
   searchTo,
 }: {
-  isOwner: boolean;
+  canViewAdvanced: boolean;
+  canChooseBranch: boolean;
   filiais: { id: string; name: string }[];
   filialId?: string;
   estoque: EstoqueItem[];
@@ -46,14 +48,14 @@ export default function RelatoriosTabs({
   const [tab, setTab] = useState<TabKey>("estoque");
 
   const tabs: { key: TabKey; label: string }[] = [{ key: "estoque", label: "Estoque" }];
-  if (isOwner) tabs.push({ key: "rentabilidade", label: "Rentabilidade" });
-  tabs.push({ key: "faturamento", label: isOwner ? "Faturamento e volume vendido" : "Faturamento (mês corrente)" });
-  if (isOwner) {
+  if (canViewAdvanced) tabs.push({ key: "rentabilidade", label: "Rentabilidade" });
+  tabs.push({ key: "faturamento", label: canViewAdvanced ? "Faturamento e volume vendido" : "Faturamento (mês corrente)" });
+  if (canViewAdvanced) {
     tabs.push({ key: "sugestao", label: "Sugestão de compra" });
     tabs.push({ key: "recorrencia", label: "Maior recorrência" });
   }
 
-  const showPeriodoFilter = isOwner && (tab === "faturamento" || tab === "rentabilidade" || tab === "recorrencia");
+  const showPeriodoFilter = canViewAdvanced && (tab === "faturamento" || tab === "rentabilidade" || tab === "recorrencia");
 
   return (
     <div className="space-y-4">
@@ -76,14 +78,14 @@ export default function RelatoriosTabs({
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {isOwner && <FilialFilter filiais={filiais} filialId={filialId} />}
+          {canChooseBranch && <FilialFilter filiais={filiais} filialId={filialId} />}
           {showPeriodoFilter && <PeriodoFilter periodo={periodo} from={searchFrom} to={searchTo} />}
         </div>
       </div>
 
       {tab === "estoque" && (
         <section className="space-y-3">
-          <EstoqueAtualTable items={estoque} />
+          <EstoqueAtualTable items={estoque} canViewCosts={canViewAdvanced} />
         </section>
       )}
 

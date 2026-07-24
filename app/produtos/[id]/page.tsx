@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser, canManageProducts } from "@/lib/auth";
+import { getEffectivePermissions, requireUser } from "@/lib/auth";
 import { getProductById, listPromotionsByProductIds } from "@/lib/repo";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import ProductActiveToggle from "@/components/ProductActiveToggle";
@@ -9,13 +9,15 @@ import { hasActivePromotionInPeriod } from "@/lib/pricing";
 
 export default async function ProdutoDetalhePage({ params }: { params: { id: string } }) {
   const user = await requireUser();
+  const permissions = await getEffectivePermissions(user);
   const filialId = await getCurrentFilialId(user);
   const product = await getProductById(params.id, filialId);
   if (!product) notFound();
 
   const promotions = await listPromotionsByProductIds(filialId, [product.id]);
   const emPromocao = hasActivePromotionInPeriod(promotions, product.id);
-  const canManage = canManageProducts(user.role);
+  const canManage = permissions.MANAGE_PRODUCTS;
+  const canViewCosts = permissions.VIEW_COSTS_MARGIN;
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -72,10 +74,12 @@ export default async function ProdutoDetalhePage({ params }: { params: { id: str
                 : "Somente unidade"}
             </dd>
           </div>
-          <div className="flex justify-between">
-            <dt style={{ color: "var(--ink-soft)" }}>Preço de custo</dt>
-            <dd className="tabular">{formatBRL(product.costPrice)}</dd>
-          </div>
+          {canViewCosts && (
+            <div className="flex justify-between">
+              <dt style={{ color: "var(--ink-soft)" }}>Preço de custo</dt>
+              <dd className="tabular">{formatBRL(product.costPrice)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt style={{ color: "var(--ink-soft)" }}>Preço de venda</dt>
             <dd className="tabular">{formatBRL(product.salePrice)}</dd>
@@ -95,7 +99,7 @@ export default async function ProdutoDetalhePage({ params }: { params: { id: str
         <div className="card space-y-3 max-w-md">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Promoções deste produto</h2>
-            {canManage && (
+            {permissions.MANAGE_PROMOTIONS && (
               <Link href="/promocoes" className="text-xs font-medium hover:underline" style={{ color: "var(--accent)" }}>
                 Gerenciar
               </Link>

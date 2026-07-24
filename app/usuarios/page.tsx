@@ -1,0 +1,49 @@
+import { requireRole } from "@/lib/auth";
+import { listFiliais, listUsersByEmpresa } from "@/lib/repo";
+import {
+  getDefaultPermissions,
+  PERMISSION_DEFINITIONS,
+  resolvePermissions,
+} from "@/lib/permissions";
+import UserPermissionsManager from "@/components/UserPermissionsManager";
+import PageHeader from "@/components/PageHeader";
+
+export default async function UsuariosPage() {
+  const owner = await requireRole(["OWNER"]);
+  const [users, filiais] = await Promise.all([
+    listUsersByEmpresa(owner.empresaId),
+    listFiliais(owner.empresaId),
+  ]);
+  const filialById = new Map(filiais.map((filial) => [filial.id, filial.name]));
+
+  const managedUsers = users
+    .filter((user) => user.role !== "OWNER")
+    .map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role as "MANAGER" | "EMPLOYEE",
+      filialName: user.filialId ? filialById.get(user.filialId) ?? "Filial não encontrada" : "Sem filial",
+      defaults: getDefaultPermissions(user.role),
+      overrides: user.permissions ?? {},
+      effective: resolvePermissions(user.role, user.permissions),
+    }));
+
+  return (
+    <div className="space-y-6 max-w-6xl">
+      <PageHeader
+        eyebrow="Equipe e segurança"
+        title="Usuários e permissões"
+        description="Personalize o que cada Gerente ou Funcionário pode fazer. O perfil-base continua servindo como configuração segura."
+      />
+      <div className="panel flex flex-wrap items-start gap-3 text-sm">
+        <span className="pill pill-ok">Dono sempre tem acesso total</span>
+        <p style={{ color: "var(--ink-soft)" }}>
+          Alterações passam a valer na próxima tela ou ação do usuário, sem necessidade de novo login.
+        </p>
+      </div>
+      <UserPermissionsManager users={managedUsers} definitions={PERMISSION_DEFINITIONS} />
+    </div>
+  );
+}
+

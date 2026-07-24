@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SessionData } from "@/lib/session";
-import type { Filial } from "@/lib/types";
+import type { EffectivePermissions, Filial } from "@/lib/types";
 import ThemeToggle from "./ThemeToggle";
 import FilialSwitcher from "./FilialSwitcher";
 
@@ -52,16 +52,25 @@ const ICONS: Record<string, React.ReactNode> = {
       strokeLinejoin="round"
     />
   ),
+  "/usuarios": (
+    <path
+      d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  ),
 };
 
 export default function NavBar({
   user,
   filiais,
   currentFilialId,
+  permissions,
 }: {
   user: SessionData;
   filiais: Filial[];
   currentFilialId: string | null;
+  permissions: EffectivePermissions | null;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -74,17 +83,18 @@ export default function NavBar({
   const links = [
     { href: "/inicio", label: "Início" },
     { href: "/pedidos", label: "Pedidos" },
-    { href: "/entrada", label: "Entrada" },
-    { href: "/movimentacao", label: "Movimentações" },
   ];
-  if (user.role === "OWNER" || user.role === "MANAGER") {
+  if (permissions?.REGISTER_ENTRIES) links.push({ href: "/entrada", label: "Entrada" });
+  links.push({ href: "/movimentacao", label: "Movimentações" });
+  if (permissions?.VIEW_REPORTS) {
     links.push({ href: "/relatorios", label: "Relatórios" });
   }
   links.push({ href: "/produtos", label: "Produtos" });
-  if (user.role === "OWNER") {
+  if (permissions?.MANAGE_PROMOTIONS) {
     links.push({ href: "/promocoes", label: "Promoções" });
-    links.push({ href: "/filiais", label: "Filiais" });
   }
+  if (permissions?.MANAGE_BRANCHES) links.push({ href: "/filiais", label: "Filiais" });
+  if (user.role === "OWNER") links.push({ href: "/usuarios", label: "Usuários" });
 
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST" });

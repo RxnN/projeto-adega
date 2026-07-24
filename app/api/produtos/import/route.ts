@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { getCurrentUser } from "@/lib/session";
-import { canManageProducts } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth";
 import { createProduct, getEmpresaById, getProductByCode, updateProduct } from "@/lib/repo";
 import type { PackageType } from "@/lib/types";
 import { withErrorHandling } from "@/lib/api-handler";
@@ -12,7 +12,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 export const POST = withErrorHandling(async (req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (!canManageProducts(user.role)) {
+  if (!(await hasPermission(user, "IMPORT_PRODUCTS"))) {
     return NextResponse.json({ error: "Você não tem permissão para importar produtos." }, { status: 403 });
   }
 

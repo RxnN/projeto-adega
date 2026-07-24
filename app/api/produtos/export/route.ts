@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { getCurrentUser } from "@/lib/session";
-import { canManageProducts } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth";
 import { getEmpresaById, listProducts } from "@/lib/repo";
 import { withErrorHandling } from "@/lib/api-handler";
 import { getCurrentFilialId } from "@/lib/filial-context";
@@ -9,7 +9,7 @@ import { getCurrentFilialId } from "@/lib/filial-context";
 export const GET = withErrorHandling(async (_req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (!canManageProducts(user.role)) {
+  if (!(await hasPermission(user, "IMPORT_PRODUCTS"))) {
     return NextResponse.json({ error: "Você não tem permissão para exportar produtos." }, { status: 403 });
   }
 
@@ -22,6 +22,7 @@ export const GET = withErrorHandling(async (_req: NextRequest) => {
   }
 
   const filialId = await getCurrentFilialId(user);
+  const canViewCosts = await hasPermission(user, "VIEW_COSTS_MARGIN");
   const products = await listProducts(filialId);
   const rows = products.map((p) => ({
     Código: p.code,
@@ -29,7 +30,7 @@ export const GET = withErrorHandling(async (_req: NextRequest) => {
     Nome: p.name,
     Categoria: p.category,
     Unidade: p.unit,
-    "Preço de Custo": p.costPrice,
+    ...(canViewCosts ? { "Preço de Custo": p.costPrice } : {}),
     "Preço de Venda": p.salePrice,
     "Estoque Atual": p.currentStock,
     "Estoque Mínimo": p.minStockAlert ?? "",

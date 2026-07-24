@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, SessionData } from "./session";
-import { getEmpresaById } from "./repo";
-import type { Empresa, Role } from "./types";
+import { getEmpresaById, getUserById } from "./repo";
+import { resolvePermissions } from "./permissions";
+import type { EffectivePermissions, Empresa, PermissionKey, Role } from "./types";
 
 const EXPIRING_SOON_DAYS = 5;
 
@@ -53,6 +54,30 @@ export async function requireRole(allowed: Role[]): Promise<SessionData> {
   if (!allowed.includes(user.role)) {
     redirect("/acesso-negado");
   }
+  return user;
+}
+
+/** Permissões efetivas são lidas do banco em cada autorização, evitando que uma
+ * alteração feita pelo Dono dependa de novo login do usuário afetado. */
+export async function getEffectivePermissions(
+  user: Pick<SessionData, "userId" | "role">
+): Promise<EffectivePermissions> {
+  if (user.role === "OWNER") return resolvePermissions("OWNER");
+  const current = await getUserById(user.userId);
+  return resolvePermissions(user.role, current?.permissions);
+}
+
+export async function hasPermission(
+  user: Pick<SessionData, "userId" | "role">,
+  permission: PermissionKey
+): Promise<boolean> {
+  const permissions = await getEffectivePermissions(user);
+  return permissions[permission];
+}
+
+export async function requirePermission(permission: PermissionKey): Promise<SessionData> {
+  const user = await requireUser();
+  if (!(await hasPermission(user, permission))) redirect("/acesso-negado");
   return user;
 }
 

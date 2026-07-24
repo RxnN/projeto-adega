@@ -3,6 +3,19 @@ export type MovementType = "IN" | "OUT";
 export type MovementSource = "MANUAL" | "QRCODE";
 export type PackageType = "CX" | "PCT";
 export type PaymentMethod = "DINHEIRO" | "PIX" | "CARTAO" | "FIADO" | "BOLETO";
+export type PermissionKey =
+  | "REGISTER_ENTRIES"
+  | "MANAGE_PRODUCTS"
+  | "IMPORT_PRODUCTS"
+  | "EDIT_ORDER_PRICE"
+  | "FORCE_STOCK"
+  | "CANCEL_ORDERS"
+  | "VIEW_REPORTS"
+  | "VIEW_COSTS_MARGIN"
+  | "MANAGE_PROMOTIONS"
+  | "MANAGE_BRANCHES";
+export type PermissionOverrides = Partial<Record<PermissionKey, boolean>>;
+export type EffectivePermissions = Record<PermissionKey, boolean>;
 
 export interface Empresa {
   id: string;
@@ -44,6 +57,7 @@ export interface User {
   email: string;
   passwordHash: string;
   role: Role;
+  permissions: PermissionOverrides | null;
   createdAt: string;
 }
 

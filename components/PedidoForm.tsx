@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { MovementType, PackageType, PaymentMethod, Product, Promotion, Role } from "@/lib/types";
+import type { MovementType, PackageType, PaymentMethod, Product, Promotion } from "@/lib/types";
 import { formatBRL } from "@/lib/format";
 import { getEffectivePrice } from "@/lib/pricing";
 import ProductAutocomplete from "./ProductAutocomplete";
@@ -64,22 +64,23 @@ interface InsufficientItem {
 export default function PedidoForm({
   products,
   type,
-  userRole,
+  canEditPrice,
+  canForceStock,
   promotions = [],
 }: {
   products: Product[];
   type: MovementType;
-  userRole: Role;
+  canEditPrice: boolean;
+  canForceStock: boolean;
   promotions?: Promotion[];
 }) {
   const router = useRouter();
   const isEntrada = type === "IN";
   // Funcionário vende sempre pelo preço de tabela (ou promocional, se houver); só
   // dono/gerente pode negociar um preço diferente disso.
-  const canEditPrice = isEntrada || userRole !== "EMPLOYEE";
+  const canEditItemPrice = isEntrada || canEditPrice;
   // Só o dono pode forçar o fechamento de um pedido de saída com estoque insuficiente
   // (deixando o estoque negativo de propósito) — Gerente e Funcionário nunca podem.
-  const canForceStock = userRole === "OWNER";
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const promotionsByProduct = useMemo(() => {
@@ -146,7 +147,7 @@ export default function PedidoForm({
             ? {
                 ...item,
                 displayQty,
-                unitValue: canEditPrice ? item.unitValue : effectivePriceFor(product.id, item.basePrice, qty),
+                unitValue: canEditItemPrice ? item.unitValue : effectivePriceFor(product.id, item.basePrice, qty),
               }
             : item
         );
@@ -214,7 +215,7 @@ export default function PedidoForm({
     setCart((prev) =>
       prev.map((item) => {
         if (item.productId !== productId) return item;
-        if (canEditPrice) return { ...item, displayQty };
+        if (canEditItemPrice) return { ...item, displayQty };
         const qty = baseQuantityFor(item, displayQty);
         return { ...item, displayQty, unitValue: effectivePriceFor(productId, item.basePrice, qty) };
       })
@@ -227,7 +228,7 @@ export default function PedidoForm({
       prev.map((item) => {
         if (item.productId !== productId) return item;
         const updated = { ...item, mode, displayQty: 1 };
-        if (canEditPrice) return updated;
+        if (canEditItemPrice) return updated;
         const qty = baseQuantityFor(updated, 1);
         return { ...updated, unitValue: effectivePriceFor(productId, item.basePrice, qty) };
       })
@@ -341,7 +342,7 @@ export default function PedidoForm({
 
       <PedidoCartTable
         rows={rows}
-        canEditPrice={canEditPrice}
+        canEditPrice={canEditItemPrice}
         emptyMessage={`Nenhum produto no pedido de ${isEntrada ? "entrada" : "saída"} ainda. Adicione produtos na busca acima.`}
         onQuantityChange={handleQuantityInput}
         onModeChange={updateMode}

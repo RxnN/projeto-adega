@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { canCancelPedidos } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth";
 import { cancelPedido, checkPedidoCancelStock, getPedidoById } from "@/lib/repo";
 import { withErrorHandling } from "@/lib/api-handler";
 import { getCurrentFilialId } from "@/lib/filial-context";
@@ -8,7 +8,7 @@ import { getCurrentFilialId } from "@/lib/filial-context";
 export const POST = withErrorHandling<{ params: { id: string } }>(async (req, { params }) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (!canCancelPedidos(user.role)) {
+  if (!(await hasPermission(user, "CANCEL_ORDERS"))) {
     return NextResponse.json({ error: "Você não tem permissão para cancelar pedidos." }, { status: 403 });
   }
 

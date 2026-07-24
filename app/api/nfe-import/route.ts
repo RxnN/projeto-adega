@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getProductsByBarcodes } from "@/lib/repo";
 import { withErrorHandling } from "@/lib/api-handler";
 import { getCurrentFilialId } from "@/lib/filial-context";
+import { hasPermission } from "@/lib/auth";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 // Sanidade contra XML forjado com um número absurdo de itens (cada item viraria uma
@@ -25,6 +26,9 @@ interface NFeDet {
 export const POST = withErrorHandling(async (req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  if (!(await hasPermission(user, "REGISTER_ENTRIES"))) {
+    return NextResponse.json({ error: "Você não tem permissão para registrar entradas." }, { status: 403 });
+  }
 
   const formData = await req.formData().catch(() => null);
   const file = formData?.get("file");

@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { listProducts, listPromotionsByFilial } from "@/lib/repo";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import PromocaoForm from "@/components/PromocaoForm";
@@ -6,7 +6,7 @@ import PromocoesList from "@/components/PromocoesList";
 import PageHeader from "@/components/PageHeader";
 
 export default async function PromocoesPage() {
-  const user = await requireRole(["OWNER"]);
+  const user = await requirePermission("MANAGE_PROMOTIONS");
   const filialId = await getCurrentFilialId(user);
   const [products, promotions] = await Promise.all([
     listProducts(filialId, { activeOnly: true }),

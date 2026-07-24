@@ -4,6 +4,7 @@ import { createPromotion, getProductById, listPromotionsByFilial } from "@/lib/r
 import { withErrorHandling } from "@/lib/api-handler";
 import { promotionCreateSchema, firstZodError } from "@/lib/validation";
 import { getCurrentFilialId } from "@/lib/filial-context";
+import { hasPermission } from "@/lib/auth";
 
 export const GET = withErrorHandling(async () => {
   const user = await getCurrentUser();
@@ -17,7 +18,7 @@ export const GET = withErrorHandling(async () => {
 export const POST = withErrorHandling(async (req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (user.role !== "OWNER") {
+  if (!(await hasPermission(user, "MANAGE_PROMOTIONS"))) {
     return NextResponse.json({ error: "Você não tem permissão para criar promoções." }, { status: 403 });
   }
 

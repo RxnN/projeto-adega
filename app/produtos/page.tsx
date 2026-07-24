@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser, canManageProducts } from "@/lib/auth";
+import { getEffectivePermissions, requireUser } from "@/lib/auth";
 import { getEmpresaById, listProducts, listPromotionsByFilial } from "@/lib/repo";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import ImportExportProducts from "@/components/ImportExportProducts";
@@ -15,13 +15,15 @@ function stockStatus(p: { currentStock: number; minStockAlert: number | null }) 
 
 export default async function ProdutosPage() {
   const user = await requireUser();
+  const permissions = await getEffectivePermissions(user);
   const filialId = await getCurrentFilialId(user);
   const [products, empresa, promotions] = await Promise.all([
     listProducts(filialId),
     getEmpresaById(user.empresaId),
     listPromotionsByFilial(filialId),
   ]);
-  const canManage = canManageProducts(user.role);
+  const canManage = permissions.MANAGE_PRODUCTS;
+  const canViewCosts = permissions.VIEW_COSTS_MARGIN;
   const importEnabled = Boolean(empresa?.importEnabled);
 
   const totalEstoqueCusto = products.reduce((sum, p) => sum + p.currentStock * p.costPrice, 0);
@@ -35,7 +37,7 @@ export default async function ProdutosPage() {
         ? "Consulte saldos, custos e preços ou gerencie o catálogo desta filial."
         : "Consulte os produtos cadastrados e seus saldos atuais."} actions={
         <div className="flex flex-wrap items-start gap-2">
-          <ImportExportProducts canImport={canManage} importEnabled={importEnabled} />
+          <ImportExportProducts canImport={permissions.IMPORT_PRODUCTS} importEnabled={importEnabled} />
           {canManage && (
             <Link href="/produtos/novo" className="btn-primary">
               + Novo produto
@@ -43,11 +45,11 @@ export default async function ProdutosPage() {
           )}
         </div>} />
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="kpi">
+      <div className={`grid gap-4 ${canViewCosts ? "sm:grid-cols-2" : ""}`}>
+        {canViewCosts && <div className="kpi">
           <p className="kpi-label">Valor total em estoque (custo)</p>
           <p className="kpi-value">{formatBRL(totalEstoqueCusto)}</p>
-        </div>
+        </div>}
         <div className="kpi">
           <p className="kpi-label">Produtos abaixo do mínimo</p>
           <p className="kpi-value">{abaixoDoMinimo}</p>
@@ -63,7 +65,7 @@ export default async function ProdutosPage() {
               <th className="text-left px-4 py-2 font-semibold uppercase text-xs tracking-wide">Categoria</th>
               <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Estoque</th>
               <th className="text-left px-4 py-2 font-semibold uppercase text-xs tracking-wide">Status</th>
-              <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Custo</th>
+              {canViewCosts && <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Custo</th>}
               <th className="text-right px-4 py-2 font-semibold uppercase text-xs tracking-wide">Venda</th>
               <th className="text-left px-4 py-2"></th>
             </tr>
@@ -99,7 +101,7 @@ export default async function ProdutosPage() {
                   <td className="px-4 py-2">
                     <span className={`pill ${status.pill}`}>{status.label}</span>
                   </td>
-                  <td className="px-4 py-2 text-right tabular">{formatBRL(p.costPrice)}</td>
+                  {canViewCosts && <td className="px-4 py-2 text-right tabular">{formatBRL(p.costPrice)}</td>}
                   <td className="px-4 py-2 text-right tabular">{formatBRL(p.salePrice)}</td>
                   <td className="px-4 py-2 text-right">
                     <Link href={`/produtos/${p.id}`} className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
@@ -111,7 +113,7 @@ export default async function ProdutosPage() {
             })}
             {products.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center" style={{ color: "var(--ink-soft)" }}>
+                <td colSpan={canViewCosts ? 8 : 7} className="px-4 py-6 text-center" style={{ color: "var(--ink-soft)" }}>
                   Nenhum produto cadastrado ainda.
                 </td>
               </tr>
@@ -132,7 +134,12 @@ export default async function ProdutosPage() {
                 <div><p className="text-xs" style={{ color: "var(--ink-soft)" }}>Estoque</p><p className="font-semibold tabular mt-1">{p.currentStock} {p.unit}</p></div>
                 <div className="text-right"><p className="text-xs" style={{ color: "var(--ink-soft)" }}>Venda</p><p className="font-semibold tabular mt-1">{formatBRL(p.salePrice)}</p></div>
               </div>
-              <div className="mobile-record-footer"><span className="text-xs" style={{ color: "var(--ink-soft)" }}>Custo {formatBRL(p.costPrice)}</span><Link href={`/produtos/${p.id}`} className="btn-secondary">Ver produto</Link></div>
+              <div className="mobile-record-footer">
+                <span className="text-xs" style={{ color: "var(--ink-soft)" }}>
+                  {canViewCosts ? `Custo ${formatBRL(p.costPrice)}` : "Consulta de estoque"}
+                </span>
+                <Link href={`/produtos/${p.id}`} className="btn-secondary">Ver produto</Link>
+              </div>
             </article>
           );
         })}

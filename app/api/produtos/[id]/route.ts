@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
-import { canManageProducts } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth";
 import { getProductById, updateProduct } from "@/lib/repo";
 import { withErrorHandling } from "@/lib/api-handler";
 import { produtoUpdateSchema, firstZodError } from "@/lib/validation";
@@ -9,7 +9,7 @@ import { getCurrentFilialId } from "@/lib/filial-context";
 export const PUT = withErrorHandling<{ params: { id: string } }>(async (req, { params }) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (!canManageProducts(user.role)) {
+  if (!(await hasPermission(user, "MANAGE_PRODUCTS"))) {
     return NextResponse.json({ error: "Você não tem permissão para editar produtos." }, { status: 403 });
   }
 

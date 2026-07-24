@@ -3,7 +3,8 @@ import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/session";
 import { getEmpresaById, listFiliais } from "@/lib/repo";
-import { getSubscriptionStatus } from "@/lib/auth";
+import { getEffectivePermissions, getSubscriptionStatus } from "@/lib/auth";
+import type { EffectivePermissions } from "@/lib/types";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import AppShell from "@/components/AppShell";
 
@@ -51,12 +52,14 @@ export default async function RootLayout({
   let empresa;
   let filiais: Awaited<ReturnType<typeof listFiliais>> = [];
   let currentFilialId: string | null = null;
+  let permissions: EffectivePermissions | null = null;
   if (user) {
     try {
       if (user.role === "OWNER") {
         [empresa, filiais] = await Promise.all([getEmpresaById(user.empresaId), listFiliais(user.empresaId)]);
       }
       currentFilialId = await getCurrentFilialId(user);
+      permissions = await getEffectivePermissions(user);
     } catch (error) {
       console.error("[RootLayout] falha ao carregar contexto de filial/assinatura", error);
     }
@@ -74,6 +77,7 @@ export default async function RootLayout({
           filiais={filiais}
           currentFilialId={currentFilialId}
           subscriptionStatus={subscriptionStatus}
+          permissions={permissions}
         >
           {children}
         </AppShell>

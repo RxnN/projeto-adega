@@ -1,21 +1,32 @@
 import { prisma } from "../prisma";
+import { Prisma } from "@prisma/client";
 import { createId } from "../id";
-import type { Role, User } from "../types";
+import type { PermissionOverrides, Role, User } from "../types";
+import { normalizePermissionOverrides } from "../permissions";
 import { toIso } from "./shared";
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
   const user = await prisma.user.findUnique({ where: { email } });
-  return user ? { ...user, role: user.role as Role, createdAt: toIso(user.createdAt) } : undefined;
+  return user ? mapUser(user) : undefined;
 }
 
 export async function getUserById(id: string): Promise<User | undefined> {
   const user = await prisma.user.findUnique({ where: { id } });
-  return user ? { ...user, role: user.role as Role, createdAt: toIso(user.createdAt) } : undefined;
+  return user ? mapUser(user) : undefined;
 }
 
 export async function listUsersByEmpresa(empresaId: string): Promise<User[]> {
   const users = await prisma.user.findMany({ where: { empresaId }, orderBy: { createdAt: "asc" } });
-  return users.map((u) => ({ ...u, role: u.role as Role, createdAt: toIso(u.createdAt) }));
+  return users.map(mapUser);
+}
+
+function mapUser(user: Prisma.UserGetPayload<object>): User {
+  return {
+    ...user,
+    role: user.role as Role,
+    permissions: normalizePermissionOverrides(user.permissions),
+    createdAt: toIso(user.createdAt),
+  };
 }
 
 export async function createUser(input: {
@@ -37,5 +48,19 @@ export async function createUser(input: {
       role: input.role,
     },
   });
-  return { ...user, role: user.role as Role, createdAt: toIso(user.createdAt) };
+  return mapUser(user);
+}
+
+export async function updateUserPermissions(
+  id: string,
+  empresaId: string,
+  permissions: PermissionOverrides | null
+): Promise<User | undefined> {
+  const existing = await prisma.user.findFirst({ where: { id, empresaId } });
+  if (!existing) return undefined;
+  const user = await prisma.user.update({
+    where: { id },
+    data: { permissions: permissions ?? Prisma.DbNull },
+  });
+  return mapUser(user);
 }

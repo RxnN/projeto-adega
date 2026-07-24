@@ -7,10 +7,12 @@ import { withErrorHandling } from "@/lib/api-handler";
 import { pedidoCreateSchema, firstZodError } from "@/lib/validation";
 import { getCurrentFilialId } from "@/lib/filial-context";
 import { getEffectivePrice } from "@/lib/pricing";
+import { getEffectivePermissions } from "@/lib/auth";
 
 export const POST = withErrorHandling(async (req: NextRequest) => {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  const permissions = await getEffectivePermissions(user);
   // Todos os papéis (OWNER, MANAGER, EMPLOYEE) podem fechar pedidos.
 
   const body = await req.json().catch(() => null);
@@ -19,6 +21,9 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return NextResponse.json({ error: firstZodError(parsed) }, { status: 400 });
   }
   const { type, items: rawItems, force, paymentMethod, boletoDueDays } = parsed.data;
+  if (type === "IN" && !permissions.REGISTER_ENTRIES) {
+    return NextResponse.json({ error: "Você não tem permissão para registrar entradas." }, { status: 403 });
+  }
   const filialId = await getCurrentFilialId(user);
   const promotions =
     type === "OUT" ? await listPromotionsByProductIds(filialId, rawItems.map((i) => i.productId)) : [];
@@ -52,9 +57,9 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     // Funcionário não pode alterar o preço de venda na saída (evita registrar venda por
     // valor menor e ficar com a diferença) — só o preço de tabela (ou promocional, se
     // ativo) é aceito. Descontos/negociação de preço exigem OWNER ou MANAGER.
-    if (type === "OUT" && user.role === "EMPLOYEE" && unitValue !== effectiveSalePrice) {
+    if (type === "OUT" && !permissions.EDIT_ORDER_PRICE && unitValue !== effectiveSalePrice) {
       return NextResponse.json(
-        { error: "Funcionários não podem alterar o preço de venda. Peça a um gerente ou dono." },
+        { error: "Usuários sem essa permissão não podem alterar o preço de venda." },
         { status: 403 }
       );
     }
@@ -65,7 +70,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   // Só o dono (OWNER) pode forçar o fechamento com estoque insuficiente (ex: correção
   // manual de inventário) — Gerente e Funcionário nunca deixam o estoque ficar negativo,
   // mesmo que enviem force=true diretamente pela API.
-  const canForceStock = user.role === "OWNER";
+  const canForceStock = permissions.FORCE_STOCK;
   if (type === "OUT" && !(force && canForceStock)) {
     const insufficient = await checkPedidoStock(
       filialId,

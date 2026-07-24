@@ -1,11 +1,11 @@
-import { requireRole } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getEmpresaById, listFiliais } from "@/lib/repo";
 import FilialForm from "@/components/FilialForm";
 import { formatDateShort } from "@/lib/format";
 import PageHeader from "@/components/PageHeader";
 
 export default async function FiliaisPage() {
-  const user = await requireRole(["OWNER"]);
+  const user = await requirePermission("MANAGE_BRANCHES");
   const [filiais, empresa] = await Promise.all([listFiliais(user.empresaId), getEmpresaById(user.empresaId)]);
   const limite = empresa?.maxFiliais ?? 1;
   const noLimite = filiais.length >= limite;
